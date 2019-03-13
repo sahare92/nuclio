@@ -534,13 +534,13 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		}
 
 		tempFileName := path.Join(tempDir, path.Base(functionPath))
-		userDefinedHeaders, found := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes["headers"]
+		userDefinedHeaders := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes.Headers
 		headers := http.Header{}
 
-		if found {
+		if userDefinedHeaders != nil {
 
 			// guaranteed a map with key of type string, the values need to be checked for correctness
-			for key, value := range userDefinedHeaders.(map[string]interface{}) {
+			for key, value := range userDefinedHeaders {
 				stringValue, ok := value.(string)
 				if !ok {
 					return "", errors.New("Failed to convert header value to string")
@@ -582,7 +582,7 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 }
 
 func (b *Builder) getFunctionPathFromGithubURL(functionPath string) (string, error) {
-	if branch, ok := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes["branch"]; ok {
+	if branch := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes.Branch; branch != "" {
 		functionPath = fmt.Sprintf("%s/archive/%s.zip",
 			strings.TrimRight(functionPath, "/"),
 			branch)
@@ -641,14 +641,9 @@ func (b *Builder) resolveGithubArchiveWorkDir(decompressDir string) (string, err
 
 func (b *Builder) resolveUserSpecifiedArchiveWorkdir(decompressDir string) (string, error) {
 	codeEntryType := b.options.FunctionConfig.Spec.Build.CodeEntryType
-	userSpecifiedWorkDirectoryInterface, found := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes["workDir"]
+	userSpecifiedWorkDirectory := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes.WorkDir
 
-	if (codeEntryType == archiveEntryType || codeEntryType == githubEntryType) && found {
-		userSpecifiedWorkDirectory, ok := userSpecifiedWorkDirectoryInterface.(string)
-		if !ok {
-			return "", errors.New("If code entry type is (archive or github) and workDir is provided, " +
-				"workDir expected to be string")
-		}
+	if (codeEntryType == archiveEntryType || codeEntryType == githubEntryType) && userSpecifiedWorkDirectory != "" {
 		decompressDir = filepath.Join(decompressDir, userSpecifiedWorkDirectory)
 	}
 	return decompressDir, nil

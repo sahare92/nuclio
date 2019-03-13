@@ -199,9 +199,15 @@ type Build struct {
 	Offline             bool                   `json:"offline,omitempty"`
 	RuntimeAttributes   map[string]interface{} `json:"runtimeAttributes,omitempty"`
 	CodeEntryType       string                 `json:"codeEntryType,omitempty"`
-	CodeEntryAttributes map[string]interface{} `json:"codeEntryAttributes,omitempty"`
+	CodeEntryAttributes CodeEntryAttributes    `json:"codeEntryAttributes,omitempty"`
 	Timestamp           int64                  `json:"timestamp,omitempty"`
 	Mode                BuildMode              `json:"mode,omitempty"`
+}
+
+type CodeEntryAttributes struct {
+	Headers map[string]interface{} `json:"headers,omitempty"`
+	WorkDir string                 `json:"workDir,omitempty"`
+	Branch  string                 `json:"branch,omitempty"`
 }
 
 // Spec holds all parameters related to a function's configuration

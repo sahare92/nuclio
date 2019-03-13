@@ -332,10 +332,7 @@ func (suite *TestSuite) compressAndDeployFunctionFromURLWithCustomDir(archiveExt
 	archivePattern string) {
 
 	createFunctionOptions := suite.getDeployOptionsDir("reverser")
-	createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryAttributes = map[string]interface{}{
-		"workDir": archivePattern,
-	}
-
+	createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryAttributes.WorkDir = archivePattern
 	parentPath := filepath.Dir(createFunctionOptions.FunctionConfig.Spec.Build.Path)
 	archivePath := suite.createFunctionArchive(parentPath,
 		archiveExtension,
@@ -378,7 +375,7 @@ func (suite *TestSuite) compressAndDeployFunctionFromGithub(archiveExtension str
 		pathToFunction)
 
 	createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryType = "github"
-	createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryAttributes = map[string]interface{}{"branch": branch}
+	createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryAttributes.Branch = branch
 
 	suite.DeployFunctionAndRequest(createFunctionOptions,
 		&httpsuite.Request{
