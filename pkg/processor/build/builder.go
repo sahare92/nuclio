@@ -677,12 +677,19 @@ func (b *Builder) readFunctionConfigFile(functionConfigPath string) error {
 		return errors.Wrap(err, "Failed to create functionconfig reader")
 	}
 
+	// keep the original function name if such exists
+	originalFunctionName := b.GetFunctionName()
+
 	// read the configuration
 	if err := functionconfigReader.Read(functionConfigFile,
 		"yaml",
 		&b.options.FunctionConfig); err != nil {
 
 		return errors.Wrap(err, "Failed to read function configuration file")
+	}
+
+	if originalFunctionName != "" {
+		b.options.FunctionConfig.Meta.Name = originalFunctionName
 	}
 
 	return nil
