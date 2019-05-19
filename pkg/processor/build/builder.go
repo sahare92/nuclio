@@ -210,6 +210,8 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 		}
 	}
 
+	b.logger.InfoWith("Really after read conf", "spec", b.options.FunctionConfig.Spec)
+
 	// create a runtime based on the configuration
 	b.runtime, err = b.createRuntime()
 	if err != nil {
