@@ -141,6 +141,7 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 	b.options = options
 
 	b.logger.InfoWith("Building", "name", b.options.FunctionConfig.Meta.Name)
+	b.logger.InfoWith("Buildingspec", "spec", b.options.FunctionConfig.Spec)
 
 	configurationRead := false
 	configFilePath := b.providedFunctionConfigFilePath()
@@ -151,6 +152,7 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 		}
 		configurationRead = true
 	}
+	b.logger.InfoWith("Specafterconf", "spec", b.options.FunctionConfig.Spec)
 
 	// create base temp directory
 	if err := b.createTempDir(); err != nil {
