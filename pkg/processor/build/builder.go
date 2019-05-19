@@ -202,6 +202,7 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 		}
 	}
 
+	b.logger.InfoWith("Really before read conf", "spec", b.options.FunctionConfig.Spec)
 	// prepare configuration from both configuration files and things builder infers
 	if !configurationRead {
 		_, err = b.readConfiguration()
