@@ -18,7 +18,6 @@ package common
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -43,32 +42,32 @@ func DownloadFile(URL string, out *os.File, headers http.Header) error {
 		return err
 	}
 
-	if !IsSuccessfulStatusCode(response.StatusCode) {
-		return fmt.Errorf(
-			"Failed to download file. Received unsuccessfull status code: %d",
-			response.StatusCode)
-	}
-
-	defer response.Body.Close() // nolint: errcheck
-
-	written, err := io.Copy(out, response.Body)
-
-	if err != nil {
-		return err
-	}
-
-	if err := out.Close(); err != nil {
-		return err
-	}
-
-	if response.ContentLength != -1 && written != response.ContentLength {
-		return fmt.Errorf(
-			"Downloaded file length (%d) is different than URL content length (%d)",
-			written,
-			response.ContentLength)
-	}
-
-	return nil
+	//if !IsSuccessfulStatusCode(response.StatusCode) {
+	return fmt.Errorf(
+		"Failed to download file. Received unsuccessfull status code: %d",
+		response.StatusCode)
+	//}
+	//
+	//defer response.Body.Close() // nolint: errcheck
+	//
+	//written, err := io.Copy(out, response.Body)
+	//
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if err := out.Close(); err != nil {
+	//	return err
+	//}
+	//
+	//if response.ContentLength != -1 && written != response.ContentLength {
+	//	return fmt.Errorf(
+	//		"Downloaded file length (%d) is different than URL content length (%d)",
+	//		written,
+	//		response.ContentLength)
+	//}
+	//
+	//return nil
 }
 
 func IsURL(s string) bool {
