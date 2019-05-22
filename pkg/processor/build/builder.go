@@ -58,6 +58,7 @@ const (
 	uhttpcImage            = "quay.io/nuclio/uhttpc:0.0.1-amd64"
 	githubEntryType        = "github"
 	archiveEntryType       = "archive"
+	s3EntryType            = "s3"
 )
 
 // holds parameters for things that are required before a runtime can be initialized
@@ -520,6 +521,7 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 
 	// for backwards compatibility, don't check for entry type url specifically
 	if common.IsURL(functionPath) {
+		codeEntryAttributes := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes
 		if codeEntryType == githubEntryType {
 			functionPath, err = b.getFunctionPathFromGithubURL(functionPath)
 			if err != nil {
@@ -537,28 +539,43 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 			return "", errors.Wrapf(err, "Failed to create temporary file: %s", tempDir)
 		}
 
-		userDefinedHeaders, found := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes["headers"]
-		headers := http.Header{}
+		if codeEntryType == s3EntryType {
+			err := common.DownloadFileFromAWSS3(tempFile,
+				codeEntryAttributes["s3Bucket"].(string),
+				codeEntryAttributes["s3ItemKey"].(string),
+				codeEntryAttributes["s3Region"].(string),
+				codeEntryAttributes["s3AccessKeyID"].(string),
+				codeEntryAttributes["s3SecretAccessKey"].(string),
+				codeEntryAttributes["s3SessionToken"].(string))
 
-		if found {
-
-			// guaranteed a map with key of type string, the values need to be checked for correctness
-			for key, value := range userDefinedHeaders.(map[string]interface{}) {
-				stringValue, ok := value.(string)
-				if !ok {
-					return "", errors.New("Failed to convert header value to string")
-				}
-				headers.Set(key, stringValue)
+			if err != nil {
+				return "", errors.Wrap(err, "Failed to download the function archive from s3")
 			}
-		}
 
-		b.logger.DebugWith("Downloading function",
-			"url", functionPath,
-			"target", tempFile.Name(),
-			"headers", headers)
+		} else {
+			userDefinedHeaders, found := codeEntryAttributes["headers"]
+			headers := http.Header{}
 
-		if err = common.DownloadFile(functionPath, tempFile, headers); err != nil {
-			return "", err
+			if found {
+
+				// guaranteed a map with key of type string, the values need to be checked for correctness
+				for key, value := range userDefinedHeaders.(map[string]interface{}) {
+					stringValue, ok := value.(string)
+					if !ok {
+						return "", errors.New("Failed to convert header value to string")
+					}
+					headers.Set(key, stringValue)
+				}
+			}
+
+			b.logger.DebugWith("Downloading function",
+				"url", functionPath,
+				"target", tempFile.Name(),
+				"headers", headers)
+
+			if err = common.DownloadFile(functionPath, tempFile, headers); err != nil {
+				return "", err
+			}
 		}
 
 		functionPath = tempFile.Name()
@@ -646,7 +663,7 @@ func (b *Builder) resolveUserSpecifiedArchiveWorkdir(decompressDir string) (stri
 	codeEntryType := b.options.FunctionConfig.Spec.Build.CodeEntryType
 	userSpecifiedWorkDirectoryInterface, found := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes["workDir"]
 
-	if (codeEntryType == archiveEntryType || codeEntryType == githubEntryType) && found {
+	if (codeEntryType == archiveEntryType || codeEntryType == githubEntryType || codeEntryType == s3EntryType) && found {
 		userSpecifiedWorkDirectory, ok := userSpecifiedWorkDirectoryInterface.(string)
 		if !ok {
 			return "", errors.New("If code entry type is (archive or github) and workDir is provided, " +
