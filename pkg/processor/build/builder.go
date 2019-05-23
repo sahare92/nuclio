@@ -521,7 +521,6 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 
 	// for backwards compatibility, don't check for entry type url specifically
 	if common.IsURL(functionPath) {
-		codeEntryAttributes := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes
 		if codeEntryType == githubEntryType {
 			functionPath, err = b.getFunctionPathFromGithubURL(functionPath)
 			if err != nil {
@@ -540,20 +539,25 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		}
 
 		if codeEntryType == s3EntryType {
-			err := common.DownloadFileFromAWSS3(tempFile,
-				codeEntryAttributes["s3Bucket"].(string),
-				codeEntryAttributes["s3ItemKey"].(string),
-				codeEntryAttributes["s3Region"].(string),
-				codeEntryAttributes["s3AccessKeyID"].(string),
-				codeEntryAttributes["s3SecretAccessKey"].(string),
-				codeEntryAttributes["s3SessionToken"].(string))
+			s3Attributes, err := b.validateAndParseS3Attributes(b.options.FunctionConfig.Spec.Build.CodeEntryAttributes)
+			if err != nil {
+				return "", errors.Wrap(err, "Failed to parse and validate s3 code entry attributes")
+			}
+
+			err = common.DownloadFileFromAWSS3(tempFile,
+				s3Attributes["s3Bucket"],
+				s3Attributes["s3ItemKey"],
+				s3Attributes["s3Region"],
+				s3Attributes["s3AccessKeyId"],
+				s3Attributes["s3SecretAccessKey"],
+				s3Attributes["s3SessionToken"])
 
 			if err != nil {
 				return "", errors.Wrap(err, "Failed to download the function archive from s3")
 			}
 
 		} else {
-			userDefinedHeaders, found := codeEntryAttributes["headers"]
+			userDefinedHeaders, found := b.options.FunctionConfig.Spec.Build.CodeEntryAttributes["headers"]
 			headers := http.Header{}
 
 			if found {
@@ -599,6 +603,30 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 	}
 
 	return resolvedPath, nil
+}
+
+func (b *Builder) validateAndParseS3Attributes(attributes map[string]interface{}) (map[string]string, error) {
+	parsedAttributes := map[string]string{}
+
+	mandatoryFields := []string{"s3Bucket", "s3ItemKey"}
+	optionalFields := []string{"s3Region", "s3AccessKeyId", "s3SecretAccessKey", "s3SessionToken"}
+
+	for _, key := range append(mandatoryFields, optionalFields...) {
+		value, found := attributes[key]
+		if !found {
+			if common.StringInSlice(key, mandatoryFields) {
+				return nil, errors.New(fmt.Sprintf("Mandatory field - '%s' not given", key))
+			}
+			continue
+		}
+		valueAsString, ok := value.(string)
+		if !ok {
+			return nil, errors.New(fmt.Sprintf("The given field - '%s' is not of type string", key))
+		}
+		parsedAttributes[key] = valueAsString
+	}
+
+	return parsedAttributes, nil
 }
 
 func (b *Builder) getFunctionPathFromGithubURL(functionPath string) (string, error) {
