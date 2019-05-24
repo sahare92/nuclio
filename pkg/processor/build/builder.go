@@ -496,9 +496,12 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		return functionSourceCodeTempPath, nil
 	}
 
+	codeEntryType := b.options.FunctionConfig.Spec.Build.CodeEntryType
+
 	// function can either be in the path, received inline or an executable via handler
 	if b.options.FunctionConfig.Spec.Build.Path == "" &&
-		b.options.FunctionConfig.Spec.Image == "" {
+		b.options.FunctionConfig.Spec.Image == "" &&
+		codeEntryType != s3EntryType {
 
 		if b.options.FunctionConfig.Spec.Runtime != "shell" {
 			return "", errors.New("Function path must be provided when specified runtime isn't shell")
@@ -511,16 +514,15 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		}
 	}
 
-	// if the function path is a URL or type is Github - first download the file
-	codeEntryType := b.options.FunctionConfig.Spec.Build.CodeEntryType
 
 	// user has to provide valid url when code entry type is github
 	if !common.IsURL(functionPath) && codeEntryType == githubEntryType {
 		return "", errors.New("Must provide valid URL when code entry type is github or archive")
 	}
 
+	// if the function path is a URL, type is Github or S3 - first download the file
 	// for backwards compatibility, don't check for entry type url specifically
-	if common.IsURL(functionPath) {
+	if common.IsURL(functionPath) || codeEntryType == s3EntryType {
 		if codeEntryType == githubEntryType {
 			functionPath, err = b.getFunctionPathFromGithubURL(functionPath)
 			if err != nil {
