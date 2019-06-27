@@ -59,6 +59,7 @@ const (
 	GithubEntryType        = "github"
 	ArchiveEntryType       = "archive"
 	S3EntryType            = "s3"
+	ImageEntryType         = "image"
 )
 
 // holds parameters for things that are required before a runtime can be initialized
