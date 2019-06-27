@@ -127,7 +127,7 @@ func (ap *Platform) HandleDeployFunction(existingFunctionConfig *functionconfig.
 			createFunctionOptions.FunctionConfig.Spec.Build.Timestamp = time.Now().Unix()
 		}
 	} else {
-		createFunctionOptions.Logger.InfoWith("Skipping build", "name", createFunctionOptions.FunctionConfig.Meta.Name)
+		createFunctionOptions.Logger.InfoWith("Skipping build", "name", createFunctionOptions.FunctionConfig.Meta.Name, "image", createFunctionOptions.FunctionConfig.Spec.Image, "buildImage", createFunctionOptions.FunctionConfig.Spec.Build.Image)
 
 		// verify user passed runtime
 		if createFunctionOptions.FunctionConfig.Spec.Runtime == "" {
@@ -263,8 +263,7 @@ func (ap *Platform) functionBuildRequired(createFunctionOptions *platform.Create
 		return true, nil
 	}
 
-	if createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryType == build.S3EntryType ||
-		createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryType == build.ImageEntryType {
+	if createFunctionOptions.FunctionConfig.Spec.Build.CodeEntryType == build.S3EntryType {
 		return true, nil
 	}
 
