@@ -402,11 +402,17 @@ func (ar *AbstractResource) writeErrorReason(responseWriter io.Writer, err error
 	// try to get the error stack
 	errors.PrintErrorStack(&buffer, err, 10)
 
+	errCause := ""
+	if errors.Cause(err) != nil {
+		errCause = errors.Cause(err).Error()
+	}
 	// format to json manually
 	serializedError, _ := json.Marshal(struct {
-		Error string `json:"error"`
+		Error      string `json:"error"`
+		ErrorCause string `json:"errorCause"`
 	}{
 		buffer.String(),
+		errCause,
 	})
 
 	// write to the response
