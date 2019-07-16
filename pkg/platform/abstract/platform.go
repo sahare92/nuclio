@@ -177,7 +177,7 @@ func (ap *Platform) ValidateCreateFunctionOptions(createFunctionOptions *platfor
 			Namespace: createFunctionOptions.FunctionConfig.Meta.Namespace,
 		},
 	}
-	projects, err := ap.GetProjects(getProjectsOptions)
+	projects, err := ap.platform.GetProjects(getProjectsOptions)
 	if err != nil {
 		return errors.Wrap(err, "Failed getting projects")
 	}
