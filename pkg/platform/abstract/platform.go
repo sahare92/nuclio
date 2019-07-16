@@ -167,6 +167,28 @@ func (ap *Platform) HandleDeployFunction(existingFunctionConfig *functionconfig.
 	return deployResult, nil
 }
 
+// Validation and enforcement of required function creation logic
+func (ap *Platform) ValidateCreateFunctionOptions(createFunctionOptions *platform.CreateFunctionOptions) error {
+
+	// validate the project exists
+	getProjectsOptions := &platform.GetProjectsOptions{
+		Meta: platform.ProjectMeta {
+			Name: createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"],
+			Namespace: createFunctionOptions.FunctionConfig.Meta.Namespace,
+		},
+	}
+	projects, err := ap.GetProjects(getProjectsOptions)
+	if err != nil {
+		return errors.Wrap(err, "Failed getting projects")
+	}
+
+	if len(projects) == 0 {
+		return errors.New("Project doesn't exist")
+	}
+
+	return nil
+}
+
 // CreateFunctionInvocation will invoke a previously deployed function
 func (ap *Platform) CreateFunctionInvocation(createFunctionInvocationOptions *platform.CreateFunctionInvocationOptions) (*platform.CreateFunctionInvocationResult, error) {
 	return ap.invoker.invoke(createFunctionInvocationOptions)

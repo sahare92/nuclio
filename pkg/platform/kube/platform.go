@@ -115,6 +115,10 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	// replace logger
 	createFunctionOptions.Logger = logStream.GetLogger()
 
+	if err := p.ValidateCreateFunctionOptions(createFunctionOptions); err != nil {
+		return nil, errors.Wrap(err, "Failed in validation of function options")
+	}
+
 	reportCreationError := func(creationError error) error {
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
 			"err", creationError)

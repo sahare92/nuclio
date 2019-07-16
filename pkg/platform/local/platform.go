@@ -106,6 +106,10 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	createFunctionOptions.FunctionConfig.Spec.RunRegistry = ""
 	createFunctionOptions.FunctionConfig.Spec.Build.Registry = ""
 
+	if err := p.ValidateCreateFunctionOptions(createFunctionOptions); err != nil {
+		return nil, errors.Wrap(err, "Failed in validation of function options")
+	}
+
 	// it's possible to pass a function without specifying any meta in the request, in that case skip getting existing function
 	if createFunctionOptions.FunctionConfig.Meta.Namespace != "" && createFunctionOptions.FunctionConfig.Meta.Name != "" {
 		existingFunctions, err := p.localStore.getFunctions(&createFunctionOptions.FunctionConfig.Meta)
