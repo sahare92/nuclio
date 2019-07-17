@@ -49,12 +49,20 @@ func (suite *functionBuildTestSuite) TestBuild() {
 	// make sure to clean up after the test
 	defer suite.dockerClient.RemoveImage(imageName)
 
+	// create a project
+	projectName := "proj-name"
+	err = suite.createProject(projectName, projectName)
+	suite.Require().NoError(err)
+
+	defer suite.deleteProject(projectName)
+
 	// use deploy with the image we just created
 	err = suite.ExecuteNutcl([]string{"deploy", functionName, "--verbose"},
 		map[string]string{
-			"run-image": imageName,
-			"runtime":   "golang",
-			"handler":   "main:Reverse",
+			"run-image":    imageName,
+			"runtime":      "golang",
+			"handler":      "main:Reverse",
+			"project-name": projectName,
 		})
 
 	suite.Require().NoError(err)

@@ -19,6 +19,7 @@ package test
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -164,4 +165,25 @@ func (suite *Suite) findPatternsInOutput(patternsMustExist []string, patternsMus
 	for _, foundPattern := range foundPatternsMustNotExist {
 		suite.Require().False(foundPattern)
 	}
+}
+
+func (suite *Suite) createProject (projectName, displayName string) error {
+	namedArgs := map[string]string{
+		"display-name": fmt.Sprintf("display-name-%d", displayName),
+		"description":  fmt.Sprintf("description-%d", "proj"),
+	}
+
+	err := suite.ExecuteNutcl([]string{
+		"create",
+		"project",
+		projectName,
+		"--verbose",
+	}, namedArgs)
+
+	suite.Require().NoError(err)
+	return err
+}
+
+func (suite *Suite) deleteProject (projectName string) {
+	suite.ExecuteNutcl([]string{"delete", "proj", projectName}, nil)
 }
