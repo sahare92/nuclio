@@ -49,20 +49,13 @@ func (suite *functionBuildTestSuite) TestBuild() {
 	// make sure to clean up after the test
 	defer suite.dockerClient.RemoveImage(imageName)
 
-	// create a project
-	projectName := "proj-name"
-	err = suite.createProject(projectName, projectName)
-	suite.Require().NoError(err)
-
-	defer suite.deleteProject(projectName)
-
 	// use deploy with the image we just created
 	err = suite.ExecuteNutcl([]string{"deploy", functionName, "--verbose"},
 		map[string]string{
 			"run-image":    imageName,
 			"runtime":      "golang",
 			"handler":      "main:Reverse",
-			"project-name": projectName,
+			"project-name": suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -100,10 +93,11 @@ func (suite *functionDeployTestSuite) TestDeploy() {
 	imageName := "nuclio/deploy-test" + uniqueSuffix
 
 	namedArgs := map[string]string{
-		"path":    path.Join(suite.GetFunctionsDir(), "common", "reverser", "golang"),
-		"image":   imageName,
-		"runtime": "golang",
-		"handler": "main:Reverse",
+		"path":         path.Join(suite.GetFunctionsDir(), "common", "reverser", "golang"),
+		"image":        imageName,
+		"runtime":      "golang",
+		"handler":      "main:Reverse",
+		"project-name": suite.projectName,
 	}
 
 	err := suite.ExecuteNutcl([]string{"deploy", functionName, "--verbose", "--no-pull"}, namedArgs)
@@ -143,11 +137,12 @@ func (suite *functionDeployTestSuite) TestDeployWithMetadata() {
 
 	err := suite.ExecuteNutcl([]string{"deploy", functionName, "--verbose", "--no-pull"},
 		map[string]string{
-			"path":    path.Join(suite.GetFunctionsDir(), "common", "envprinter", "python"),
-			"env":     "FIRST_ENV=11223344,SECOND_ENV=0099887766",
-			"labels":  "label1=first,label2=second",
-			"runtime": "python",
-			"handler": "envprinter:handler",
+			"path":         path.Join(suite.GetFunctionsDir(), "common", "envprinter", "python"),
+			"env":          "FIRST_ENV=11223344,SECOND_ENV=0099887766",
+			"labels":       "label1=first,label2=second",
+			"runtime":      "python",
+			"handler":      "envprinter:handler",
+			"project-name": suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -186,7 +181,8 @@ func (suite *functionDeployTestSuite) TestDeployFromFunctionConfig() {
 
 	err := suite.ExecuteNutcl([]string{"deploy", "", "--verbose", "--no-pull"},
 		map[string]string{
-			"path": path.Join(suite.GetFunctionsDir(), "common", "json-parser-with-function-config", "python"),
+			"path":         path.Join(suite.GetFunctionsDir(), "common", "json-parser-with-function-config", "python"),
+			"project-name": suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -223,10 +219,11 @@ func (suite *functionDeployTestSuite) TestInvokeWithLogging() {
 	imageName := "nuclio/deploy-test" + uniqueSuffix
 
 	namedArgs := map[string]string{
-		"path":    path.Join(suite.GetFunctionsDir(), "common", "logging", "golang"),
-		"image":   imageName,
-		"runtime": "golang",
-		"handler": "main:Logging",
+		"path":         path.Join(suite.GetFunctionsDir(), "common", "logging", "golang"),
+		"image":        imageName,
+		"runtime":      "golang",
+		"handler":      "main:Logging",
+		"project-name": suite.projectName,
 	}
 
 	err := suite.ExecuteNutcl([]string{"deploy", functionName, "--verbose", "--no-pull"}, namedArgs)
@@ -358,9 +355,10 @@ func (suite *functionDeployTestSuite) TestDeployShellViaHandler() {
 
 	err := suite.ExecuteNutcl([]string{"deploy", functionName, "--verbose", "--no-pull"},
 		map[string]string{
-			"image":   imageName,
-			"runtime": "shell",
-			"handler": "rev",
+			"image":        imageName,
+			"runtime":      "shell",
+			"handler":      "rev",
+			"project-name": suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -401,6 +399,7 @@ func (suite *functionDeployTestSuite) TestDeployWithFunctionEvent() {
 			"image":   imageName,
 			"runtime": "shell",
 			"handler": "rev",
+			"project-name": suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -446,6 +445,7 @@ func (suite *functionDeployTestSuite) TestBuildWithSaveDeployWithLoad() {
 			"image":             imageName,
 			"runtime":           "golang",
 			"output-image-file": tarName,
+			"project-name":      suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -507,10 +507,11 @@ func (suite *functionGetTestSuite) TestGet() {
 		functionNames = append(functionNames, functionName)
 
 		namedArgs := map[string]string{
-			"path":    path.Join(suite.GetFunctionsDir(), "common", "reverser", "golang"),
-			"image":   imageName,
-			"runtime": "golang",
-			"handler": "main:Reverse",
+			"path":         path.Join(suite.GetFunctionsDir(), "common", "reverser", "golang"),
+			"image":        imageName,
+			"runtime":      "golang",
+			"handler":      "main:Reverse",
+			"project-name": suite.projectName,
 		}
 
 		err := suite.ExecuteNutcl([]string{

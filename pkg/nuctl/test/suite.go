@@ -47,6 +47,7 @@ type Suite struct {
 	dockerClient     dockerclient.Client
 	shellClient      *cmdrunner.ShellRunner
 	outputBuffer     bytes.Buffer
+	projectName      string
 }
 
 func (suite *Suite) SetupSuite() {
@@ -80,6 +81,13 @@ func (suite *Suite) SetupSuite() {
 		OS:        "linux",
 	})
 	suite.Require().NoError(err)
+
+	// create a project
+	suite.projectName = "proj-name"
+	err = suite.createProject(suite.projectName, suite.projectName)
+	suite.Require().NoError(err)
+
+	defer suite.deleteProject(suite.projectName)
 }
 
 func (suite *Suite) TearDownSuite() {
