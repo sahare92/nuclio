@@ -86,11 +86,11 @@ func (suite *Suite) SetupSuite() {
 	suite.projectName = "proj-name"
 	err = suite.createProject(suite.projectName, suite.projectName)
 	suite.Require().NoError(err)
-
-	defer suite.deleteProject(suite.projectName)
 }
 
 func (suite *Suite) TearDownSuite() {
+
+	suite.deleteProject(suite.projectName)
 
 	// restore platform type
 	err := os.Setenv(nuctlPlatformEnvVarName, suite.origPlatformType)
