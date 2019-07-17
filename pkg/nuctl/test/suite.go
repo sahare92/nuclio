@@ -169,8 +169,8 @@ func (suite *Suite) findPatternsInOutput(patternsMustExist []string, patternsMus
 
 func (suite *Suite) createProject (projectName, displayName string) error {
 	namedArgs := map[string]string{
-		"display-name": fmt.Sprintf("display-name-%d", displayName),
-		"description":  fmt.Sprintf("description-%d", "proj"),
+		"display-name": fmt.Sprintf("display-name-%s", displayName),
+		"description":  fmt.Sprintf("description-%s", "proj"),
 	}
 
 	err := suite.ExecuteNutcl([]string{
