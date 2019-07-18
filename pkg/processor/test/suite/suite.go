@@ -297,7 +297,10 @@ func (suite *TestSuite) GetDeployOptions(functionName string, functionPath strin
 	createFunctionOptions.FunctionConfig.Spec.Build.TempDir = suite.TempDir
 
 	// set default project-name when not given
-	if 	createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] == "" {
+	if createFunctionOptions.FunctionConfig.Meta.Labels == nil {
+		createFunctionOptions.FunctionConfig.Meta.Labels = map[string]string{}
+	}
+	if createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] == "" {
 		createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.ProjectName
 	}
 
@@ -323,6 +326,10 @@ func (suite *TestSuite) PopulateDeployOptions(createFunctionOptions *platform.Cr
 		createFunctionOptions.FunctionConfig.Meta.Name = suite.GetUniqueFunctionName(createFunctionOptions.FunctionConfig.Meta.Name)
 	}
 
+	// set default project-name when not given
+	if createFunctionOptions.FunctionConfig.Meta.Labels == nil {
+		createFunctionOptions.FunctionConfig.Meta.Labels = map[string]string{}
+	}
 	if createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] == "" {
 		createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.ProjectName
 	}
