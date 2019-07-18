@@ -63,6 +63,7 @@ type TestSuite struct {
 	TempDir      string
 	CleanupTemp  bool
 	ProjectName  string
+	Namespace    string
 }
 
 // BlastRequest holds information for BlastHTTP function
@@ -102,13 +103,16 @@ func (suite *TestSuite) SetupSuite() {
 	suite.Platform, err = local.NewPlatform(suite.Logger)
 	suite.Require().NoError(err)
 
+	// use default namespace by platform if specified
+	suite.Namespace = suite.Platform.ResolveDefaultNamespace("")
+
 	// create project to be used throughout the suite
 	suite.ProjectName = "default-project"
 	createProjectOptions := &platform.CreateProjectOptions{
 		ProjectConfig: platform.ProjectConfig{
 			Meta: platform.ProjectMeta{
-				Name: suite.ProjectName,
-				Namespace: "nuclio",
+				Name:      suite.ProjectName,
+				Namespace: suite.Namespace,
 			},
 			Spec: platform.ProjectSpec{
 				DisplayName: suite.ProjectName,

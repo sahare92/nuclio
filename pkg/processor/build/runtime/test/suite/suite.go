@@ -442,7 +442,6 @@ func (suite *TestSuite) compressAndDeployFunction(archiveExtension string, compr
 
 	// set the path to the zip
 	createFunctionOptions.FunctionConfig.Spec.Build.Path = archivePath
-	createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.TestSuite.ProjectName
 
 	suite.DeployFunctionAndRequest(createFunctionOptions,
 		&httpsuite.Request{
