@@ -62,6 +62,7 @@ type TestSuite struct {
 	containerID  string
 	TempDir      string
 	CleanupTemp  bool
+	ProjectName  string
 }
 
 // BlastRequest holds information for BlastHTTP function
@@ -100,6 +101,26 @@ func (suite *TestSuite) SetupSuite() {
 
 	suite.Platform, err = local.NewPlatform(suite.Logger)
 	suite.Require().NoError(err)
+
+	// create project to be used throughout the suite
+	suite.ProjectName = "default-project"
+	createProjectOptions := &platform.CreateProjectOptions{
+		ProjectConfig: platform.ProjectConfig{
+			Meta: platform.ProjectMeta{
+				Name: suite.ProjectName,
+			},
+		},
+	}
+	suite.CreateProject(createProjectOptions, false)
+}
+
+func (suite *TestSuite) TearDownSuite() {
+	deleteProjectOptions := &platform.DeleteProjectOptions{
+		Meta: platform.ProjectMeta{
+			Name: suite.ProjectName,
+		},
+	}
+	suite.DeleteProject(deleteProjectOptions, false)
 }
 
 // SetupTest is called before each test in the suite
@@ -275,6 +296,11 @@ func (suite *TestSuite) GetDeployOptions(functionName string, functionPath strin
 	suite.TempDir = suite.CreateTempDir()
 	createFunctionOptions.FunctionConfig.Spec.Build.TempDir = suite.TempDir
 
+	// set default project-name when not given
+	if 	createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] == "" {
+		createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.ProjectName
+	}
+
 	return createFunctionOptions
 }
 
@@ -295,6 +321,10 @@ func (suite *TestSuite) PopulateDeployOptions(createFunctionOptions *platform.Cr
 	// TODO: will affect concurrent runs
 	if createFunctionOptions.FunctionConfig.Meta.Name != "" {
 		createFunctionOptions.FunctionConfig.Meta.Name = suite.GetUniqueFunctionName(createFunctionOptions.FunctionConfig.Meta.Name)
+	}
+
+	if createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] == "" {
+		createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.ProjectName
 	}
 
 	// don't explicitly pull base images before building

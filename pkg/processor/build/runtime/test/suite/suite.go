@@ -54,7 +54,6 @@ type TestSuite struct {
 	RuntimeSuite   RuntimeSuite
 	ArchivePattern string
 	archiveInfos   []archiveInfo
-	projectName    string
 }
 
 func (suite *TestSuite) SetupSuite() {
@@ -64,27 +63,6 @@ func (suite *TestSuite) SetupSuite() {
 		{".zip", archiver.Zip.Make},
 		{".tar.gz", archiver.TarGz.Make},
 	}
-
-	suite.projectName = "default-project"
-	createProjectOptions := &platform.CreateProjectOptions{
-		ProjectConfig: platform.ProjectConfig{
-			Meta: platform.ProjectMeta{
-				Name: suite.projectName,
-			},
-		},
-	}
-
-	// create project to be used in the suite
-	suite.CreateProject(createProjectOptions, false)
-}
-
-func (suite *TestSuite) TearDownSuite() {
-	deleteProjectOptions := &platform.DeleteProjectOptions{
-		Meta: platform.ProjectMeta{
-			Name: suite.projectName,
-		},
-	}
-	suite.DeleteProject(deleteProjectOptions, false)
 }
 
 func (suite *TestSuite) GetProcessorBuildDir() string {
@@ -518,7 +496,6 @@ func (suite *TestSuite) getDeployOptions(functionName string) *platform.CreateFu
 	createFunctionOptions.FunctionConfig.Spec.Handler = functionInfo.Handler
 	createFunctionOptions.FunctionConfig.Spec.Runtime = functionInfo.Runtime
 	createFunctionOptions.FunctionConfig.Spec.ReadinessTimeoutSeconds = 30
-	createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.projectName
 
 	return createFunctionOptions
 }

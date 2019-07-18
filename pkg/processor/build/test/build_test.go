@@ -19,16 +19,15 @@ package buildsuite
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
-	"testing"
-
 	"github.com/nuclio/nuclio/pkg/errors"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/processor/trigger/http/test/suite"
 	"github.com/nuclio/nuclio/test/httpsrv"
+	"io/ioutil"
+	"os"
+	"path"
+	"testing"
 
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/suite"

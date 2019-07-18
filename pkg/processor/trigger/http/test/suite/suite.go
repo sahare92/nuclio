@@ -73,7 +73,7 @@ type Request struct {
 // TestSuite is an HTTP test suite
 type TestSuite struct {
 	processorsuite.TestSuite
-	httpClient *http.Client
+	httpClient  *http.Client
 }
 
 // SetupTest runs before every test
