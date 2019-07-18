@@ -445,7 +445,6 @@ func (suite *functionDeployTestSuite) TestBuildWithSaveDeployWithLoad() {
 			"image":             imageName,
 			"runtime":           "golang",
 			"output-image-file": tarName,
-			"project-name":      suite.projectName,
 		})
 
 	suite.Require().NoError(err)
@@ -462,6 +461,7 @@ func (suite *functionDeployTestSuite) TestBuildWithSaveDeployWithLoad() {
 			"runtime":          "golang",
 			"handler":          "main:Reverse",
 			"input-image-file": tarName,
+			"project-name":     suite.projectName,
 		})
 
 	suite.Require().NoError(err)

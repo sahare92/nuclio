@@ -186,6 +186,24 @@ func (suite *TestSuite) TearDownTest() {
 	}
 }
 
+func (suite *TestSuite) CreateProject(createProjectOptions *platform.CreateProjectOptions, expectError bool) {
+	err := suite.Platform.CreateProject(createProjectOptions)
+	if !expectError {
+		suite.Require().NoError(err)
+	} else {
+		suite.Require().Error(err)
+	}
+}
+
+func (suite *TestSuite) DeleteProject(deleteProjectOptions *platform.DeleteProjectOptions, expectError bool) {
+	err := suite.Platform.DeleteProject(deleteProjectOptions)
+	if !expectError {
+		suite.Require().NoError(err)
+	} else {
+		suite.Require().Error(err)
+	}
+}
+
 // CreateFunction builds a docker image, runs a container from it and then
 // runs onAfterContainerRun
 func (suite *TestSuite) DeployFunction(createFunctionOptions *platform.CreateFunctionOptions,

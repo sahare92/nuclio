@@ -54,6 +54,7 @@ type TestSuite struct {
 	RuntimeSuite   RuntimeSuite
 	ArchivePattern string
 	archiveInfos   []archiveInfo
+	projectName    string
 }
 
 func (suite *TestSuite) SetupSuite() {
@@ -63,6 +64,27 @@ func (suite *TestSuite) SetupSuite() {
 		{".zip", archiver.Zip.Make},
 		{".tar.gz", archiver.TarGz.Make},
 	}
+
+	suite.projectName = "project-name"
+	createProjectOptions := &platform.CreateProjectOptions{
+		ProjectConfig: platform.ProjectConfig{
+			Meta: platform.ProjectMeta{
+				Name: suite.projectName,
+			},
+		},
+	}
+
+	// create project to be used in the suite
+	suite.CreateProject(createProjectOptions, false)
+}
+
+func (suite *TestSuite) TearDownSuite() {
+	deleteProjectOptions := &platform.DeleteProjectOptions{
+		Meta: platform.ProjectMeta{
+			Name: suite.projectName,
+		},
+	}
+	suite.DeleteProject(deleteProjectOptions, false)
 }
 
 func (suite *TestSuite) GetProcessorBuildDir() string {
