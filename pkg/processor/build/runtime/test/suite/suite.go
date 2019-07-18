@@ -65,7 +65,7 @@ func (suite *TestSuite) SetupSuite() {
 		{".tar.gz", archiver.TarGz.Make},
 	}
 
-	suite.projectName = "project-name"
+	suite.projectName = "default-project"
 	createProjectOptions := &platform.CreateProjectOptions{
 		ProjectConfig: platform.ProjectConfig{
 			Meta: platform.ProjectMeta{
@@ -518,6 +518,7 @@ func (suite *TestSuite) getDeployOptions(functionName string) *platform.CreateFu
 	createFunctionOptions.FunctionConfig.Spec.Handler = functionInfo.Handler
 	createFunctionOptions.FunctionConfig.Spec.Runtime = functionInfo.Runtime
 	createFunctionOptions.FunctionConfig.Spec.ReadinessTimeoutSeconds = 30
+	createFunctionOptions.FunctionConfig.Meta.Labels["nuclio.io/project-name"] = suite.projectName
 
 	return createFunctionOptions
 }

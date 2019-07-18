@@ -187,6 +187,7 @@ func (suite *TestSuite) TearDownTest() {
 }
 
 func (suite *TestSuite) CreateProject(createProjectOptions *platform.CreateProjectOptions, expectError bool) {
+	suite.Logger.Info("Creating project", "name", createProjectOptions.ProjectConfig.Meta.Name)
 	err := suite.Platform.CreateProject(createProjectOptions)
 	if !expectError {
 		suite.Require().NoError(err)
@@ -196,6 +197,7 @@ func (suite *TestSuite) CreateProject(createProjectOptions *platform.CreateProje
 }
 
 func (suite *TestSuite) DeleteProject(deleteProjectOptions *platform.DeleteProjectOptions, expectError bool) {
+	suite.Logger.Info("Deleting project", "name", deleteProjectOptions.Meta.Name)
 	err := suite.Platform.DeleteProject(deleteProjectOptions)
 	if !expectError {
 		suite.Require().NoError(err)
