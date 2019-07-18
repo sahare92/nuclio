@@ -108,6 +108,7 @@ func (suite *TestSuite) SetupSuite() {
 		ProjectConfig: platform.ProjectConfig{
 			Meta: platform.ProjectMeta{
 				Name: suite.ProjectName,
+				Namespace: "nuclio",
 			},
 			Spec: platform.ProjectSpec{
 				DisplayName: suite.ProjectName,
