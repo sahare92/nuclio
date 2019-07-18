@@ -109,6 +109,10 @@ func (suite *TestSuite) SetupSuite() {
 			Meta: platform.ProjectMeta{
 				Name: suite.ProjectName,
 			},
+			Spec: platform.ProjectSpec{
+				DisplayName: suite.ProjectName,
+				Description: "some description",
+			},
 		},
 	}
 	suite.CreateProject(createProjectOptions, false)
@@ -208,8 +212,11 @@ func (suite *TestSuite) TearDownTest() {
 }
 
 func (suite *TestSuite) CreateProject(createProjectOptions *platform.CreateProjectOptions, expectError bool) {
-	suite.Logger.Info("Creating project", "name", createProjectOptions.ProjectConfig.Meta.Name)
+	suite.Logger.InfoWith("Creating project", "name", createProjectOptions.ProjectConfig.Meta.Name)
 	err := suite.Platform.CreateProject(createProjectOptions)
+
+	suite.Logger.DebugWith("Project creation result", "err", err)
+
 	if !expectError {
 		suite.Require().NoError(err)
 	} else {
