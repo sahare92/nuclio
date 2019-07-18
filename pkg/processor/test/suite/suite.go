@@ -304,6 +304,7 @@ func (suite *TestSuite) GetDeployOptions(functionName string, functionPath strin
 	createFunctionOptions.FunctionConfig.Meta.Name = functionName
 	createFunctionOptions.FunctionConfig.Spec.Runtime = suite.Runtime
 	createFunctionOptions.FunctionConfig.Spec.Build.Path = functionPath
+	createFunctionOptions.FunctionConfig.Meta.Namespace = suite.Namespace
 
 	suite.TempDir = suite.CreateTempDir()
 	createFunctionOptions.FunctionConfig.Spec.Build.TempDir = suite.TempDir
@@ -336,6 +337,10 @@ func (suite *TestSuite) PopulateDeployOptions(createFunctionOptions *platform.Cr
 	// TODO: will affect concurrent runs
 	if createFunctionOptions.FunctionConfig.Meta.Name != "" {
 		createFunctionOptions.FunctionConfig.Meta.Name = suite.GetUniqueFunctionName(createFunctionOptions.FunctionConfig.Meta.Name)
+	}
+
+	if createFunctionOptions.FunctionConfig.Meta.Namespace == "" {
+		createFunctionOptions.FunctionConfig.Meta.Namespace = suite.Namespace
 	}
 
 	// set default project-name when not given
