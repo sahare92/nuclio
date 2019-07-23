@@ -14,21 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prometheuspull
+package prometheuspush
 
 import (
-	"os"
+	"fmt"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/errors"
+	"github.com/nuclio/nuclio/pkg/metricsink"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
-	"github.com/nuclio/nuclio/pkg/processor/metricsink"
 
 	"github.com/mitchellh/mapstructure"
 )
 
 type Configuration struct {
 	metricsink.Configuration
+	Interval       string
+	JobName        string
 	InstanceName   string
 	parsedInterval time.Duration
 }
@@ -44,17 +46,21 @@ func NewConfiguration(name string, metricSinkConfiguration *platformconfig.Metri
 		return nil, errors.Wrap(err, "Failed to decode attributes")
 	}
 
-	if newConfiguration.URL == "" {
-		newConfiguration.URL = ":8090"
+	// try to parse the interval
+	var err error
+	newConfiguration.parsedInterval, err = time.ParseDuration(newConfiguration.Interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to parse interval")
 	}
 
-	envInstanceName := os.Getenv("NUCLIO_FUNCTION_INSTANCE")
+	// verify job name passed
+	if newConfiguration.JobName == "" {
+		return nil, fmt.Errorf("Job name is required for metric sink %s", name)
+	}
+
+	// verify instance name passed
 	if newConfiguration.InstanceName == "" {
-		if envInstanceName == "" {
-			newConfiguration.InstanceName = "{{ .Namespace }}-{{ .Name }}"
-		} else {
-			newConfiguration.InstanceName = envInstanceName
-		}
+		return nil, fmt.Errorf("Instance name is required for metric sink %s", name)
 	}
 
 	return &newConfiguration, nil

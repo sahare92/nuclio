@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package appinsights
+package prometheuspull
 
 import (
 	"github.com/nuclio/nuclio/pkg/errors"
+	"github.com/nuclio/nuclio/pkg/metricsink"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
 	"github.com/nuclio/nuclio/pkg/processor"
-	"github.com/nuclio/nuclio/pkg/processor/metricsink"
 
 	"github.com/nuclio/logger"
 )
@@ -34,7 +34,7 @@ func (f *factory) Create(parentLogger logger.Logger,
 	metricProvider metricsink.MetricProvider) (metricsink.MetricSink, error) {
 
 	// create logger
-	appinsightsLogger := parentLogger.GetChild("appinsights")
+	prometheusPullLogger := parentLogger.GetChild("prompull")
 
 	configuration, err := NewConfiguration(name, metricSinkConfiguration)
 	if err != nil {
@@ -42,7 +42,7 @@ func (f *factory) Create(parentLogger logger.Logger,
 	}
 
 	// create the metric sink
-	appinsightsMetricSink, err := newMetricSink(appinsightsLogger,
+	prometheusPullMetricSink, err := newMetricSink(prometheusPullLogger,
 		processorConfiguration,
 		configuration,
 		metricProvider)
@@ -50,10 +50,10 @@ func (f *factory) Create(parentLogger logger.Logger,
 		return nil, errors.Wrap(err, "Failed to create prometheus pull metric sink")
 	}
 
-	return appinsightsMetricSink, nil
+	return prometheusPullMetricSink, nil
 }
 
 // register factory
 func init() {
-	metricsink.RegistrySingleton.Register("appinsights", &factory{})
+	metricsink.RegistrySingleton.Register("prometheusPull", &factory{})
 }

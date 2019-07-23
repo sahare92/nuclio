@@ -14,25 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package appinsights
+package prometheuspush
 
 import (
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/errors"
+	"github.com/nuclio/nuclio/pkg/metricsink"
+	"github.com/nuclio/nuclio/pkg/metricsink/prometheus"
 	"github.com/nuclio/nuclio/pkg/processor"
-	"github.com/nuclio/nuclio/pkg/processor/metricsink"
-	"github.com/nuclio/nuclio/pkg/processor/metricsink/prometheus"
 
-	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
 	"github.com/nuclio/logger"
+	prometheusclient "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/push"
 )
 
 type MetricSink struct {
 	*metricsink.AbstractMetricSink
-	configuration *Configuration
-	gatherers     []prometheus.Gatherer
-	client        appinsights.TelemetryClient
+	configuration  *Configuration
+	metricRegistry *prometheusclient.Registry
+	gatherers      []prometheus.Gatherer
 }
 
 func newMetricSink(parentLogger logger.Logger,
@@ -42,7 +43,7 @@ func newMetricSink(parentLogger logger.Logger,
 	loggerInstance := parentLogger.GetChild(configuration.Name)
 
 	newAbstractMetricSink, err := metricsink.NewAbstractMetricSink(loggerInstance,
-		"appinsights",
+		"promethuesPush",
 		configuration.Name,
 		metricProvider)
 
@@ -50,26 +51,24 @@ func newMetricSink(parentLogger logger.Logger,
 		return nil, errors.Wrap(err, "Failed to create abstract metric sink")
 	}
 
-	// create application insights client
-	telemetryConfig := appinsights.NewTelemetryConfiguration(configuration.InstrumentationKey)
-	telemetryConfig.MaxBatchSize = configuration.MaxBatchSize
-	telemetryConfig.MaxBatchInterval = configuration.parsedMaxBatchInterval
-	client := appinsights.NewTelemetryClientFromConfig(telemetryConfig)
-
-	newMetricPuller := &MetricSink{
+	newMetricPusher := &MetricSink{
 		AbstractMetricSink: newAbstractMetricSink,
 		configuration:      configuration,
-		client:             client,
+		metricRegistry:     prometheusclient.NewRegistry(),
 	}
 
-	// create a bunch of gatherer
-	if err := newMetricPuller.createGatherers(metricProvider); err != nil {
+	// create a bunch of prometheus metrics which we will populate periodically
+	if err := newMetricPusher.createGatherers(metricProvider); err != nil {
 		return nil, errors.Wrap(err, "Failed to create gatherers")
 	}
 
-	newMetricPuller.Logger.InfoWith("Created")
+	newMetricPusher.Logger.InfoWith("Created",
+		"jobName", configuration.JobName,
+		"instanceName", configuration.InstanceName,
+		"pushGatewayURL", configuration.URL,
+		"pushInterval", configuration.Interval)
 
-	return newMetricPuller, nil
+	return newMetricPusher, nil
 }
 
 func (ms *MetricSink) Start() error {
@@ -79,12 +78,21 @@ func (ms *MetricSink) Start() error {
 		return nil
 	}
 
+	// push in the background
+	go ms.pushPeriodically()
+
+	return nil
+}
+
+func (ms *MetricSink) pushPeriodically() {
+
 	// set when stop() is called and channel is closed
 	done := false
 	defer close(ms.StoppedChannel)
 
 	ms.Logger.DebugWith("Pushing periodically",
-		"interval", ms.configuration.parsedInterval)
+		"interval", ms.configuration.parsedInterval,
+		"target", ms.configuration.URL)
 
 	for !done {
 
@@ -94,21 +102,24 @@ func (ms *MetricSink) Start() error {
 			// gather the metrics from the triggers - this will update the metrics
 			// from counters internally held by triggers and their child objects
 			if err := ms.gather(); err != nil {
-				return errors.Wrap(err, "Failed to gather")
+				ms.Logger.WarnWith("Failed to gather metrics", "err", err)
+
+				continue
 			}
 
+			// AddFromGatherer is used here rather than FromGatherer to not delete a
+			// previously pushed success timestamp in case of a failure of this
+			// backup.
+			if err := push.AddFromGatherer(ms.configuration.JobName,
+				nil,
+				ms.configuration.URL,
+				ms.metricRegistry); err != nil {
+				ms.Logger.WarnWith("Failed to push metrics", "err", err)
+			}
 		case <-ms.StopChannel:
 			done = true
 		}
 	}
-
-	return nil
-}
-
-func (ms *MetricSink) Stop() chan struct{} {
-
-	// call parent
-	return ms.AbstractMetricSink.Stop()
 }
 
 func (ms *MetricSink) createGatherers(metricProvider metricsink.MetricProvider) error {
@@ -116,7 +127,9 @@ func (ms *MetricSink) createGatherers(metricProvider metricsink.MetricProvider) 
 	for _, trigger := range metricProvider.GetTriggers() {
 
 		// create a gatherer for the trigger
-		triggerGatherer, err := newTriggerGatherer(trigger, ms.client)
+		triggerGatherer, err := prometheus.NewTriggerGatherer(ms.configuration.InstanceName,
+			trigger,
+			ms.metricRegistry)
 
 		if err != nil {
 			return errors.Wrap(err, "Failed to create trigger gatherer")
@@ -126,7 +139,10 @@ func (ms *MetricSink) createGatherers(metricProvider metricsink.MetricProvider) 
 
 		// now add workers
 		for _, worker := range trigger.GetWorkers() {
-			workerGatherer, err := newWorkerGatherer(trigger, worker, ms.client)
+			workerGatherer, err := prometheus.NewWorkerGatherer(ms.configuration.InstanceName,
+				trigger,
+				worker,
+				ms.metricRegistry)
 
 			if err != nil {
 				return errors.Wrap(err, "Failed to create worker gatherer")
