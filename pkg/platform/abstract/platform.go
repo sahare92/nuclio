@@ -71,6 +71,15 @@ func (ap *Platform) CreateFunctionBuild(createFunctionBuildOptions *platform.Cre
 	return builder.Build(createFunctionBuildOptions)
 }
 
+func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunctionOptions) (*platform.CreateFunctionResult, error) {
+	p.Logger.Debug("Trying to create function")
+	res, err := p.platform.CreateFunction(createFunctionOptions)
+	if err == nil {
+		p.Logger.Debug("Successfully created function")
+	}
+	return res, err
+}
+
 // HandleDeployFunction calls a deployer that does the platform specific deploy, but adds a lot
 // of common code
 func (ap *Platform) HandleDeployFunction(existingFunctionConfig *functionconfig.ConfigWithStatus,
