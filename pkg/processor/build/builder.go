@@ -1598,16 +1598,16 @@ func (b *Builder) getFunctionTempFile(tempDir string, functionPath string, isArc
 	functionPathBase := path.Base(functionPath)
 
 	// for archives, use a temporary local file renamed to something short to allow wacky long archive URLs
-	if isArchive || util.IsCompressed(functionPathBase) {
-
-		// retain file extension
-		fileExtension, err := b.getFileExtensionByURL(functionPath)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to get file extension from URL")
-		}
-
-		return ioutil.TempFile(tempDir, "nuclio-function-*"+fileExtension)
-	}
+	//if isArchive || util.IsCompressed(functionPathBase) {
+	//
+	//	// retain file extension
+	//	fileExtension, err := b.getFileExtensionByURL(functionPath)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "Failed to get file extension from URL")
+	//	}
+	//
+	//	return ioutil.TempFile(tempDir, "nuclio-function-*"+fileExtension)
+	//}
 
 	// for non-archives, must retain file name
 	return os.OpenFile(path.Join(tempDir, functionPathBase), os.O_RDWR|os.O_CREATE, 0600)
