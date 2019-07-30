@@ -537,12 +537,12 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		return "", fmt.Errorf("Function path doesn't exist: %s", resolvedPath)
 	}
 
-	if util.IsCompressed(resolvedPath) {
-		resolvedPath, err = b.decompressFunctionArchive(resolvedPath)
-		if err != nil {
-			return "", errors.Wrap(err, "Failed to decompress function archive")
-		}
-	}
+	//if util.IsCompressed(resolvedPath) {
+	//	resolvedPath, err = b.decompressFunctionArchive(resolvedPath)
+	//	if err != nil {
+	//		return "", errors.Wrap(err, "Failed to decompress function archive")
+	//	}
+	//}
 
 	return resolvedPath, nil
 }
