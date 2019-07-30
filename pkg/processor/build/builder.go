@@ -1536,10 +1536,10 @@ func (b *Builder) resolveFunctionPathFromURL(functionPath string, codeEntryType 
 			return "", errors.Wrap(err, "Failed to download file")
 		}
 
-		if (codeEntryType == S3EntryType || codeEntryType == GithubEntryType || codeEntryType == ArchiveEntryType) &&
-			!util.IsCompressed(tempFile.Name()) {
-			return "", errors.New("Downloaded file type is not supported. (expected an archive)")
-		}
+		//if (codeEntryType == S3EntryType || codeEntryType == GithubEntryType || codeEntryType == ArchiveEntryType) &&
+		//	!util.IsCompressed(tempFile.Name()) {
+		//	return "", errors.New("Downloaded file type is not supported. (expected an archive)")
+		//}
 
 		return tempFile.Name(), nil
 	}
