@@ -39,6 +39,7 @@ import (
 
 const (
 	FunctionsArchiveFilePath = "test/test_funcs.zip"
+	JarFilePath = "test/hello-world.jar"
 )
 
 //
@@ -616,6 +617,10 @@ func (suite *testSuite) TestResolveFunctionPathGithubCodeEntry() {
 	suite.testResolveFunctionPathArchive(buildConfiguration, archiveFileURL)
 }
 
+func (suite *testSuite) TestResolveFunctionPathArchiveCodeEntryWithJar() {
+	suite.testResolveFunctionPathArchiveWithJar()
+}
+
 func (suite *testSuite) TestResolveFunctionPathS3CodeEntry() {
 
 	// validate values passed to the mocked function
@@ -700,6 +705,46 @@ func (suite *testSuite) testResolveFunctionPathRemoteCodeFile(fileExtension stri
 	suite.Assert().NoError(err)
 
 	suite.Assert().Equal(codeFileContent, string(resultSourceCode))
+}
+
+func (suite *testSuite) testResolveFunctionPathArchiveWithJar() {
+	suite.builder.options.FunctionConfig.Spec.Build = functionconfig.Build{
+		CodeEntryType: ArchiveEntryType,
+		Path: "http://some-address.com/hello-world.jar",
+	}
+
+	// the archive will be "downloaded" to this directory
+	err := suite.builder.createTempDir()
+	suite.NoError(err)
+
+	defer suite.builder.cleanupTempDir() // nolint: errcheck
+
+	// mock the http response to be the test's function jar file
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	functionJarFileBytes, err := ioutil.ReadFile(JarFilePath)
+
+	responder := func(req *http.Request) (*http.Response, error) {
+		response := &http.Response{
+			Status:        "200",
+			StatusCode:    200,
+			Body:          httpmock.NewRespBodyFromBytes(functionJarFileBytes),
+			Header:        http.Header{},
+			ContentLength: int64(len(functionJarFileBytes)),
+		}
+		return response, err
+	}
+	httpmock.RegisterResponder("GET", suite.builder.options.FunctionConfig.Spec.Build.Path, responder)
+
+	path, err := suite.builder.resolveFunctionPath(suite.builder.options.FunctionConfig.Spec.Build.Path)
+	suite.NoError(err)
+
+	// validate the given path is as expected
+	suite.Equal(suite.builder.tempDir+"/download/hello-world.jar", path)
+
+	// make sure the downloaded file is our test jar
+	downloadFileContent, err := ioutil.ReadFile(path)
+	suite.Equal(functionJarFileBytes, downloadFileContent)
 }
 
 func (suite *testSuite) testResolveFunctionPathArchive(buildConfiguration functionconfig.Build, archiveFileURL string) {
