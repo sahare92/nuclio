@@ -1507,7 +1507,7 @@ func (b *Builder) resolveFunctionPathFromURL(functionPath string, codeEntryType 
 		}
 
 		isArchive := codeEntryType == S3EntryType ||
-			(codeEntryType == ArchiveEntryType && !util.IsJar(functionPath))||
+			codeEntryType == ArchiveEntryType ||
 			codeEntryType == GithubEntryType
 
 		tempDir, err := b.mkDirUnderTemp("download")
