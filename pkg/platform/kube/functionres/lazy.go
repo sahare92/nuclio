@@ -528,6 +528,7 @@ func (lc *lazyClient) createOrUpdateDeployment(functionLabels labels.Set,
 
 		lc.populateDeploymentContainer(functionLabels, function, &container)
 		container.VolumeMounts = volumeMounts
+		revisionHistoryLimit := int32(1)
 
 		deploymentSpec := apps_v1beta1.DeploymentSpec{
 			Replicas: &replicas,
@@ -548,6 +549,7 @@ func (lc *lazyClient) createOrUpdateDeployment(functionLabels labels.Set,
 					Volumes: volumes,
 				},
 			},
+			RevisionHistoryLimit: &revisionHistoryLimit,
 		}
 
 		if function.Spec.ServiceAccount != "" {
