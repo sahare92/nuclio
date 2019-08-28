@@ -121,6 +121,7 @@ func (pr *projectResource) Create(request *http.Request) (id string, attributes 
 	})
 
 	if err != nil {
+		pr.Logger.InfoWith("failed creating project", "err", err, "error", err.Error())
 		if strings.Contains(err.Error(),"already exists"){
 			return "", nil, nuclio.WrapErrConflict(err)
 		}
