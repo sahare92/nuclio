@@ -290,7 +290,8 @@ func (p *Platform) CreateProject(createProjectOptions *platform.CreateProjectOpt
 		Create(&newProject)
 
 	if err != nil {
-		return errors.Wrap(err, "Failed to create project")
+		//return errors.Wrap(err, "Failed to create project")
+		return err
 	}
 
 	return nil
