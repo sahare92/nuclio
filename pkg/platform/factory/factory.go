@@ -114,12 +114,13 @@ func ensureDefaultProjectExistence(parentLogger logger.Logger, p platform.Platfo
 		if err != nil {
 			return errors.Wrap(err, "Failed to create abstract project")
 		}
-		parentLogger.Info("5")
+		parentLogger.InfoWith("5", )
 		err = p.CreateProject(&platform.CreateProjectOptions{
 			ProjectConfig: *newProject.GetConfig(),
 		})
 		parentLogger.Info("6")
 		if err != nil {
+			parentLogger.InfoWith("6", "err", err.Error(), "projectConfig", projectConfig, "conf", *newProject.GetConfig())
 			return errors.Wrap(err, "Failed to create default project")
 		}
 		parentLogger.Info("7")
