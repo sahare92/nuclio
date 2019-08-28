@@ -87,16 +87,18 @@ func CreatePlatform(parentLogger logger.Logger,
 }
 
 func ensureDefaultProjectExistence(parentLogger logger.Logger, p platform.Platform, defaultNamespace string) error {
+	parentLogger.Info("1")
 	projects, err := p.GetProjects(&platform.GetProjectsOptions{
 		Meta: platform.ProjectMeta{
 			Name:      "default",
 			Namespace: defaultNamespace,
 		},
 	})
+	parentLogger.Info("2")
 	if err != nil {
 		return errors.New("Failed to get projects")
 	}
-
+	parentLogger.Info("3")
 	if len(projects) != 1 {
 
 		// if we're here the default project doesn't exist. create it
@@ -107,17 +109,20 @@ func ensureDefaultProjectExistence(parentLogger logger.Logger, p platform.Platfo
 			},
 			Spec: platform.ProjectSpec{},
 		}
+		parentLogger.Info("4")
 		newProject, err := platform.NewAbstractProject(parentLogger, p, projectConfig)
 		if err != nil {
 			return errors.Wrap(err, "Failed to create abstract project")
 		}
-
+		parentLogger.Info("5")
 		err = p.CreateProject(&platform.CreateProjectOptions{
 			ProjectConfig: *newProject.GetConfig(),
 		})
+		parentLogger.Info("6")
 		if err != nil {
 			return errors.Wrap(err, "Failed to create default project")
 		}
+		parentLogger.Info("7")
 	}
 
 	return nil
