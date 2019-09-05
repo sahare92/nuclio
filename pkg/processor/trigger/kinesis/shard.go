@@ -52,12 +52,14 @@ func newShard(parentLogger logger.Logger, kinesisTrigger *kinesis, shardID strin
 }
 
 func (s *shard) readFromShard() error {
-	s.logger.DebugWith("Starting to read from shard")
+	shardIteratorType := "LATEST"
+	s.logger.DebugWith("Starting to read from shard",
+		"shardIteratorType", shardIteratorType)
 
 	getShardIteratorArgs := kinesisclient.NewArgs()
 	getShardIteratorArgs.Add("StreamName", s.kinesisTrigger.configuration.StreamName)
 	getShardIteratorArgs.Add("ShardId", s.shardID)
-	getShardIteratorArgs.Add("ShardIteratorType", "TRIM_HORIZON")
+	getShardIteratorArgs.Add("ShardIteratorType", shardIteratorType)
 
 	getShardIteratorResponse, err := s.kinesisTrigger.kinesisClient.GetShardIterator(getShardIteratorArgs)
 	if err != nil {
