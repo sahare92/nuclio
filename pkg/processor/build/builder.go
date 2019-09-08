@@ -249,6 +249,8 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 	}
 
 	if b.options.FunctionConfig.Spec.Image == "@set-after-build" {
+		b.options.FunctionConfig.Spec.Image = processorImage
+		b.options.FunctionConfig.Spec.Build.Path = ""
 		enrichedConfiguration.Spec.Build.Path = ""
 		enrichedConfiguration.Spec.Image = processorImage
 	}
