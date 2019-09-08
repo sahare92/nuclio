@@ -249,6 +249,7 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 	}
 
 	if b.options.FunctionConfig.Spec.Image == "@set-after-build" {
+		enrichedConfiguration.Spec.Build.Path = ""
 		enrichedConfiguration.Spec.Image = processorImage
 	}
 
@@ -557,9 +558,6 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		if isURL {
 			b.options.FunctionConfig.Spec.Build.CodeEntryType = ArchiveEntryType
 		} else {
-
-			// this means function path is local - remove it and use the built image instead
-			b.options.FunctionConfig.Spec.Build.Path = ""
 			b.options.FunctionConfig.Spec.Build.CodeEntryType = ImageEntryType
 			b.options.FunctionConfig.Spec.Image = "@set-after-build"
 		}
