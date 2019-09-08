@@ -247,8 +247,9 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to build processor image")
 	}
-
+	b.logger.InfoWith("test1", "processorImage", processorImage)
 	if b.options.FunctionConfig.Spec.Image == "@set-after-build" {
+		b.logger.InfoWith("test2", "processorImage", processorImage)
 		b.options.FunctionConfig.Spec.Image = processorImage
 	}
 
