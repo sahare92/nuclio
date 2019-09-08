@@ -228,7 +228,12 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 
 	// copy the configuration we enriched, restoring any fields that should not be leaked externally
 	enrichedConfiguration := b.options.FunctionConfig
-	enrichedConfiguration.Spec.Build.Path = ""
+
+	if enrichedConfiguration.Spec.Build.CodeEntryType == ImageEntryType {
+		enrichedConfiguration.Spec.Build.Path = ""
+	} else {
+		enrichedConfiguration.Spec.Build.Path = b.originalFunctionConfig.Spec.Build.Path
+	}
 
 	// if a callback is registered, call back
 	if b.options.OnAfterConfigUpdate != nil {
@@ -248,10 +253,7 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 		return nil, errors.Wrap(err, "Failed to build processor image")
 	}
 
-	if b.options.FunctionConfig.Spec.Image == "@set-after-build" {
-		b.options.FunctionConfig.Spec.Image = processorImage
-		b.options.FunctionConfig.Spec.Build.Path = ""
-		enrichedConfiguration.Spec.Build.Path = ""
+	if enrichedConfiguration.Spec.Build.CodeEntryType == ImageEntryType {
 		enrichedConfiguration.Spec.Image = processorImage
 	}
 
@@ -561,7 +563,6 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 			b.options.FunctionConfig.Spec.Build.CodeEntryType = ArchiveEntryType
 		} else {
 			b.options.FunctionConfig.Spec.Build.CodeEntryType = ImageEntryType
-			b.options.FunctionConfig.Spec.Image = "@set-after-build"
 		}
 	}
 
