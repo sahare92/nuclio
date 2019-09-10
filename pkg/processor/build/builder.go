@@ -513,8 +513,8 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 		}
 	}
 
-	// user has to provide valid url when code entry type is github
-	if !common.IsURL(functionPath) && codeEntryType == GithubEntryType {
+	// user has to provide valid url when code entry type is github or archive
+	if !common.IsURL(functionPath) && (codeEntryType == GithubEntryType || codeEntryType == ArchiveEntryType) {
 		return "", errors.New("Must provide valid URL when code entry type is github or archive")
 	}
 
