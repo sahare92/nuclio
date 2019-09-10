@@ -176,7 +176,7 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 	// resolve the function path - download in case its a URL
 	b.options.FunctionConfig.Spec.Build.Path, err = b.resolveFunctionPath(b.options.FunctionConfig.Spec.Build.Path)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to resolve function path")
+		return nil, err
 	}
 
 	// parse the inline blocks in the file - blocks of comments starting with @nuclio.<something>. this may be used
