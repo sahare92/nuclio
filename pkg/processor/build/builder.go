@@ -521,13 +521,13 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 	// if the function path is a URL, type is Github or S3 - first download the file
 	// for backwards compatibility, don't check for entry type url specifically
 	if functionPath, err = b.resolveFunctionPathFromURL(functionPath, codeEntryType); err != nil {
-		return "", errors.Wrap(err, "Failed to download function from URL")
+		return "", errors.Wrap(err, "Failed to download function from the given URL")
 	}
 
 	// Assume it's a local path
 	resolvedPath, err := filepath.Abs(filepath.Clean(functionPath))
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to get resolve non-url path")
+		return "", errors.Wrap(err, "Failed to resolve non-url path")
 	}
 
 	if !common.FileExists(resolvedPath) {
