@@ -183,7 +183,6 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 	// parse the inline blocks in the file - blocks of comments starting with @nuclio.<something>. this may be used
 	// later on (e.g. for creating files)
 	if common.IsFile(b.options.FunctionConfig.Spec.Build.Path) {
-		var functionSourceCode string
 
 		// see if there are any inline blocks in the code. ignore errors during parse / load / whatever
 		b.parseInlineBlocks() // nolint: errcheck
@@ -194,16 +193,9 @@ func (b *Builder) Build(options *platform.CreateFunctionBuildOptions) (*platform
 			return nil, errors.Wrap(b.inlineConfigurationBlock.Error, "Failed to parse inline configuration")
 		}
 
-		// try to see if we need to convert the file path -> functionSourceCode
-		functionSourceCode, err = b.getSourceCodeFromFilePath()
-		if err != nil {
-			b.logger.DebugWith("Not populating function source code", "reason", errors.Cause(err))
-		} else {
+		// populate function source code
+		b.populateFunctionSourceCodeFromFilePath()
 
-			// set into source code
-			b.logger.DebugWith("Populating functionSourceCode from file path", "contents", functionSourceCode)
-			b.options.FunctionConfig.Spec.Build.FunctionSourceCode = base64.StdEncoding.EncodeToString([]byte(functionSourceCode))
-		}
 	}
 
 	// prepare configuration from both configuration files and things builder infers
@@ -484,6 +476,11 @@ func (b *Builder) writeFunctionSourceCodeToTempFile(functionSourceCode string) (
 		moduleFileName = fmt.Sprintf("%s.%s", moduleFileName, runtimeExtension)
 	}
 
+	// Since our functions run under UNIX, we need to remove '\r\n' & make it '\n'
+	// That way, while deploying a function from the UI while using Windows,
+	// ...the inserted hidden windows characters (^M) will be removed
+	decodedFunctionSourceCode = common.RemoveWindowsCarriage(decodedFunctionSourceCode)
+
 	sourceFilePath := path.Join(tempDir, moduleFileName)
 
 	b.logger.DebugWith("Writing function source code to temporary file", "functionPath", sourceFilePath)
@@ -545,7 +542,7 @@ func (b *Builder) resolveFunctionPath(functionPath string) (string, error) {
 	}
 
 	if !common.FileExists(resolvedPath) {
-		return "", fmt.Errorf("Function path doesn't exist: %s", resolvedPath)
+		return "", errors.Errorf("Function path doesn't exist: %s", resolvedPath)
 	}
 
 	if util.IsCompressed(resolvedPath) {
@@ -579,13 +576,13 @@ func (b *Builder) validateAndParseS3Attributes(attributes map[string]interface{}
 		value, found := attributes[key]
 		if !found {
 			if common.StringInSlice(key, mandatoryFields) {
-				return nil, fmt.Errorf("Mandatory field - '%s' not given", key)
+				return nil, errors.Errorf("Mandatory field - '%s' not given", key)
 			}
 			continue
 		}
 		valueAsString, ok := value.(string)
 		if !ok {
-			return nil, fmt.Errorf("The given field - '%s' is not of type string", key)
+			return nil, errors.Errorf("The given field - '%s' is not of type string", key)
 		}
 		parsedAttributes[key] = valueAsString
 	}
@@ -974,7 +971,7 @@ func (b *Builder) getRuntimeNameByFileExtension(functionPath string) (string, er
 	// try to read the file extension
 	functionFileExtension := filepath.Ext(functionPath)
 	if functionFileExtension == "" {
-		return "", fmt.Errorf("Filepath %s has no extension", functionPath)
+		return "", errors.Errorf("Filepath %s has no extension", functionPath)
 	}
 
 	// Remove the final period
@@ -998,7 +995,7 @@ func (b *Builder) getRuntimeNameByFileExtension(functionPath string) (string, er
 	}
 
 	if candidateRuntimeName == "" {
-		return "", fmt.Errorf("Unsupported file extension: %s", functionFileExtension)
+		return "", errors.Errorf("Unsupported file extension: %s", functionFileExtension)
 	}
 
 	return candidateRuntimeName, nil
@@ -1007,7 +1004,7 @@ func (b *Builder) getRuntimeNameByFileExtension(functionPath string) (string, er
 func (b *Builder) getRuntimeFileExtensionByName(runtimeName string) (string, error) {
 	runtimeInfo, found := b.runtimeInfo[runtimeName]
 	if !found {
-		return "", fmt.Errorf("Unsupported runtime name: %s", runtimeName)
+		return "", errors.Errorf("Unsupported runtime name: %s", runtimeName)
 	}
 
 	return runtimeInfo.extension, nil
@@ -1016,7 +1013,7 @@ func (b *Builder) getRuntimeFileExtensionByName(runtimeName string) (string, err
 func (b *Builder) getRuntimeCommentParser(logger logger.Logger, runtimeName string) (inlineparser.ConfigParser, error) {
 	runtimeInfo, found := b.runtimeInfo[runtimeName]
 	if !found {
-		return nil, fmt.Errorf("Unsupported runtime name: %s", runtimeName)
+		return nil, errors.Errorf("Unsupported runtime name: %s", runtimeName)
 	}
 
 	return runtimeInfo.inlineParser, nil
@@ -1611,6 +1608,18 @@ func (b *Builder) downloadFunctionFromURL(tempFile *os.File,
 		"headers", headers)
 
 	return common.DownloadFile(functionPath, tempFile, headers)
+}
+
+func (b *Builder) populateFunctionSourceCodeFromFilePath() {
+	functionSourceCode, err := b.getSourceCodeFromFilePath()
+	if err != nil {
+		b.logger.DebugWith("Not populating function source code", "reason", errors.Cause(err))
+	} else {
+
+		// set into source code
+		b.logger.DebugWith("Populating functionSourceCode from file path", "contents", functionSourceCode)
+		b.options.FunctionConfig.Spec.Build.FunctionSourceCode = base64.StdEncoding.EncodeToString([]byte(functionSourceCode))
+	}
 }
 
 func (b *Builder) getFunctionTempFile(tempDir string, functionPath string, isArchive bool) (*os.File, error) {
