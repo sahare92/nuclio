@@ -213,10 +213,12 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			return nil, buildErr
 		}
 
+		p.Logger.Debug("test: deploying")
 		createFunctionResult, deployErr := p.deployer.deploy(existingFunctionInstance, createFunctionOptions)
 		if deployErr != nil {
 
 			// try to report the error
+			p.Logger.DebugWith("test: there's an error", "deployErr", deployErr)
 			reportCreationError(deployErr) // nolint: errcheck
 
 			return nil, deployErr
