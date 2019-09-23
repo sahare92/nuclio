@@ -18,6 +18,7 @@ package kube
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -240,7 +241,10 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 
 				// check if there's a next line from logsRequest
 				if scanner.Scan() {
-					d.logger.DebugWith("scanned line", "lineText", scanner.Text())
+					var tempScan map[string]interface{}
+
+					json.Unmarshal(scanner.Bytes(), &tempScan)
+					d.logger.DebugWith("scanned message", "lineText", scanner.Text(), "message", tempScan["message"])
 
 					// read the current token and append to logs
 					podLogsMessage += scanner.Text()
