@@ -240,6 +240,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 
 				// check if there's a next line from logsRequest
 				if scanner.Scan() {
+					d.logger.DebugWith("scanned line", "lineText", scanner.Text())
 
 					// read the current token and append to logs
 					podLogsMessage += scanner.Text()
