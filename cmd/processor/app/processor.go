@@ -193,6 +193,7 @@ func (p *Processor) Start() error {
 			return errors.Wrap(err, "Failed to start metric pushing")
 		}
 	}
+	p.logger.Info("Processor started successfully")
 
 	<-p.stop // Wait for stop
 	p.logger.Info("Processor quitting")
