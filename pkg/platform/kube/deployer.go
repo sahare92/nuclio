@@ -266,7 +266,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 		}
 
 		// add the last processor log line to the suspected error
-		suspectedError = lastProcessorLogLine + "\n" + suspectedError
+		suspectedError = lastProcessorLogLine + "\n\n" + suspectedError
 
 		// close the stream
 		logsRequest.Close() // nolint: errcheck
