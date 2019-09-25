@@ -243,16 +243,17 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string, failedOnly 
 				// check if there's a next line from logsRequest
 				if scanner.Scan() {
 
-					json.Unmarshal(scanner.Bytes(), &currentLogLine)
-					d.logger.DebugWith("scanned line", "currentLogLine", currentLogLine)
-					if failedOnly && currentLogLine["message"] == "Processor started successfully" {
-						break
-					}
+					if err := json.Unmarshal(scanner.Bytes(), &currentLogLine); err == nil {
+						d.logger.DebugWith("scanned line", "currentLogLine", currentLogLine)
+						if failedOnly && currentLogLine["message"] == "Processor started successfully" {
+							break
+						}
+					} else {
 
-					// read the current token and append to logs
-					if currentLogLine["level"] != "debug" {
+						// read the current token and append to logs
 						currentPodLogs += scanner.Text()
 					}
+
 				} else {
 					break
 				}
