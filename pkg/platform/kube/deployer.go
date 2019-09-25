@@ -258,7 +258,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string, failedOnly 
 			}
 
 			if failedOnly && lastParsedLog["message"] != "Processor started successfully" {
-				podLogsMessage += "\n* " + pod.Name + "\nRelevant log: " + lastParsedLogText
+				podLogsMessage += "\n* " + pod.Name + " (Relevant logs)\n: " + lastParsedLogText
 			}
 
 			// close the stream
