@@ -227,8 +227,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string, failedOnly 
 		// iterate over pods and get their logs
 		for _, pod := range functionPods.Items {
 			var currentPodLogs string
-			var lastParsedLogText string
-			var lastParsedLog map[string]interface{}
+			var currentLogLine map[string]interface{}
 
 			logsRequest, getLogsErr := d.consumer.kubeClientSet.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).Stream()
 			if getLogsErr != nil {
@@ -244,21 +243,22 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string, failedOnly 
 				// check if there's a next line from logsRequest
 				if scanner.Scan() {
 
-					json.Unmarshal(scanner.Bytes(), &lastParsedLog)
-					if failedOnly && lastParsedLog["message"] == "Processor started successfully" {
+					json.Unmarshal(scanner.Bytes(), &currentLogLine)
+					if failedOnly && currentLogLine["message"] == "Processor started successfully" {
 						break
 					}
 
 					// read the current token and append to logs
-					currentPodLogs += scanner.Text()
-					lastParsedLogText = scanner.Text()
+					if currentLogLine["level"] != "debug" {
+						currentPodLogs += scanner.Text()
+					}
 				} else {
 					break
 				}
 			}
 
-			if failedOnly && lastParsedLog["message"] != "Processor started successfully" {
-				podLogsMessage += "\n* " + pod.Name + " (Relevant logs):\n " + lastParsedLogText + "\n"
+			if failedOnly && currentLogLine["message"] != "Processor started successfully" {
+				podLogsMessage += "\n* " + pod.Name + " (Relevant logs):\n " + currentPodLogs + "\n"
 			}
 
 			// close the stream
