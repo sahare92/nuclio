@@ -166,7 +166,7 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 		functionInstance.Namespace,
 		functionInstance.Name)
 	if err != nil {
-		errMessage := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
+		errMessage := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name, true)
 		return nil, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
 	}
 
@@ -205,7 +205,7 @@ func waitForFunctionReadiness(loggerInstance logger.Logger,
 	return function, err
 }
 
-func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
+func (d *deployer) getFunctionPodLogs(namespace string, name string, failedOnly bool) string {
 	podLogsMessage := "\nPod logs:\n"
 
 	// list pods
@@ -226,11 +226,13 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 
 		// iterate over pods and get their logs
 		for _, pod := range functionPods.Items {
-			podLogsMessage += "\n* " + pod.Name + "\n"
+			var currentPodLogs string
+			var lastParsedLogText string
+			var lastParsedLog map[string]interface{}
 
 			logsRequest, getLogsErr := d.consumer.kubeClientSet.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).Stream()
 			if getLogsErr != nil {
-				podLogsMessage += "Failed to read logs: " + getLogsErr.Error() + "\n"
+				currentPodLogs += "Failed to read logs: " + getLogsErr.Error() + "\n"
 				continue
 			}
 
@@ -241,16 +243,22 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 
 				// check if there's a next line from logsRequest
 				if scanner.Scan() {
-					var tempScan map[string]interface{}
 
-					json.Unmarshal(scanner.Bytes(), &tempScan)
-					d.logger.DebugWith("scanned message", "lineText", scanner.Text(), "message", tempScan["message"])
+					json.Unmarshal(scanner.Bytes(), &lastParsedLog)
+					if failedOnly && lastParsedLog["message"] == "Processor started successfully" {
+						break
+					}
 
 					// read the current token and append to logs
-					podLogsMessage += scanner.Text()
+					currentPodLogs += scanner.Text()
+					lastParsedLogText = scanner.Text()
 				} else {
 					break
 				}
+			}
+
+			if failedOnly && lastParsedLog["message"] != "Processor started successfully" {
+				podLogsMessage += "\n* " + pod.Name + "\nRelevant log: " + lastParsedLogText
 			}
 
 			// close the stream
