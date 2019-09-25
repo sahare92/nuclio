@@ -159,7 +159,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			FunctionStatus: &functionconfig.Status{
 				HTTPPort: defaultHTTPPort,
 				State:    functionconfig.FunctionStateError,
-				Message:  creationError.Error(),
+				Message:  errorStack.String(),
 			},
 		})
 	}
