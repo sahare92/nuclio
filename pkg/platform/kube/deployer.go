@@ -18,6 +18,7 @@ package kube
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -141,7 +142,7 @@ func (d *deployer) populateFunction(functionConfig *functionconfig.Config,
 }
 
 func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
-	createFunctionOptions *platform.CreateFunctionOptions) (*platform.CreateFunctionResult, error) {
+	createFunctionOptions *platform.CreateFunctionOptions) (*platform.CreateFunctionResult, string, error) {
 
 	// get the logger with which we need to deploy
 	deployLogger := createFunctionOptions.Logger
@@ -156,7 +157,7 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 			State: functionconfig.FunctionStateWaitingForResourceConfiguration,
 		})
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to wait for function readiness")
+		return nil, "", errors.Wrap(err, "Failed to wait for function readiness")
 	}
 
 	// wait for the function to be ready
@@ -165,13 +166,13 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 		functionInstance.Namespace,
 		functionInstance.Name)
 	if err != nil {
-		errMessage := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
-		return nil, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
+		errMessage, suspectedError := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
+		return nil, suspectedError, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
 	}
 
 	return &platform.CreateFunctionResult{
 		Port: functionInstance.Status.HTTPPort,
-	}, nil
+	}, "", nil
 }
 
 func waitForFunctionReadiness(loggerInstance logger.Logger,
@@ -204,7 +205,8 @@ func waitForFunctionReadiness(loggerInstance logger.Logger,
 	return function, err
 }
 
-func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
+func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, string) {
+	var suspectedError string
 	podLogsMessage := "\nPod logs:\n"
 
 	// list pods
@@ -214,7 +216,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 
 	if listPodErr != nil {
 		podLogsMessage += "Failed to list pods: " + listPodErr.Error() + "\n"
-		return podLogsMessage
+		return "", podLogsMessage
 	}
 
 	if len(functionPods.Items) == 0 {
@@ -222,36 +224,46 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 			namespace,
 			name)
 	} else {
+		pod := functionPods.Items[0]
 
-		// iterate over pods and get their logs
-		for _, pod := range functionPods.Items {
-			podLogsMessage += "\n* " + pod.Name + "\n"
-
-			logsRequest, getLogsErr := d.consumer.kubeClientSet.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).Stream()
-			if getLogsErr != nil {
-				podLogsMessage += "Failed to read logs: " + getLogsErr.Error() + "\n"
-				continue
+		// get the latest pod
+		for _, currentPod := range functionPods.Items {
+			if pod.ObjectMeta.CreationTimestamp.Before(&currentPod.ObjectMeta.CreationTimestamp) {
+				pod = currentPod
 			}
-
-			scanner := bufio.NewScanner(logsRequest)
-
-			// get only first MaxLogLines logs
-			for i := 0; i < MaxLogLines; i++ {
-
-				// check if there's a next line from logsRequest
-				if scanner.Scan() {
-
-					// read the current token and append to logs
-					podLogsMessage += scanner.Text()
-				} else {
-					break
-				}
-			}
-
-			// close the stream
-			logsRequest.Close() // nolint: errcheck
 		}
+
+		// get the pod logs
+		podLogsMessage += "\n* " + pod.Name + "\n"
+
+		logsRequest, getLogsErr := d.consumer.kubeClientSet.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).Stream()
+		if getLogsErr != nil {
+			podLogsMessage += "Failed to read logs: " + getLogsErr.Error() + "\n"
+		}
+
+		scanner := bufio.NewScanner(logsRequest)
+
+		// get only first MaxLogLines logs
+		for i := 0; i < MaxLogLines; i++ {
+
+			// check if there's a next line from logsRequest
+			if scanner.Scan() {
+				if !json.Valid(scanner.Bytes()) {
+
+					// save the unstructured lines as suspected
+					suspectedError += scanner.Text() + "\n"
+				}
+
+				// read the current token and append to logs
+				podLogsMessage += scanner.Text()
+			} else {
+				break
+			}
+		}
+
+		// close the stream
+		logsRequest.Close() // nolint: errcheck
 	}
 
-	return podLogsMessage
+	return podLogsMessage, suspectedError
 }
