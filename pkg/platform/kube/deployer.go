@@ -249,7 +249,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 
 			// check if there's a next line from logsRequest
 			if scanner.Scan() {
-				d.logger.DebugWith("scannedLine", scanner.Text())
+				d.logger.DebugWith("scannedLine", "line", scanner.Text())
 				if !json.Valid(scanner.Bytes()) {
 					d.logger.Debug("invalid")
 					// save the unstructured lines as suspected
