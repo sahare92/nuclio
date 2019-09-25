@@ -244,6 +244,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string, failedOnly 
 				if scanner.Scan() {
 
 					json.Unmarshal(scanner.Bytes(), &currentLogLine)
+					d.logger.DebugWith("scanned line", "currentLogLine", currentLogLine)
 					if failedOnly && currentLogLine["message"] == "Processor started successfully" {
 						break
 					}
