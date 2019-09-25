@@ -241,6 +241,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			podLogsMessage += "Failed to read logs: " + getLogsErr.Error() + "\n"
 		}
 
+		var lastProcessorLogLine string
 		scanner := bufio.NewScanner(logsRequest)
 
 		// get only first MaxLogLines logs
@@ -252,14 +253,19 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 
 					// save the unstructured lines as suspected
 					suspectedError += scanner.Text() + "\n"
+				} else {
+					lastProcessorLogLine = scanner.Text()
 				}
 
 				// read the current token and append to logs
-				podLogsMessage += scanner.Text()
+				podLogsMessage += scanner.Text() + "\n"
 			} else {
 				break
 			}
 		}
+
+		// add the last processor log line to the suspected error
+		suspectedError = lastProcessorLogLine + "\n" + suspectedError
 
 		// close the stream
 		logsRequest.Close() // nolint: errcheck
