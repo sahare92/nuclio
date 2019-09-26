@@ -143,7 +143,7 @@ func (d *deployer) populateFunction(functionConfig *functionconfig.Config,
 }
 
 func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
-	createFunctionOptions *platform.CreateFunctionOptions) (*platform.CreateFunctionResult, string, error) {
+	createFunctionOptions *platform.CreateFunctionOptions) (*platform.CreateFunctionResult, error) {
 
 	// get the logger with which we need to deploy
 	deployLogger := createFunctionOptions.Logger
@@ -158,7 +158,7 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 			State: functionconfig.FunctionStateWaitingForResourceConfiguration,
 		})
 	if err != nil {
-		return nil, "", errors.Wrap(err, "Failed to wait for function readiness")
+		return nil, errors.Wrap(err, "Failed to wait for function readiness")
 	}
 
 	// wait for the function to be ready
@@ -167,13 +167,13 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 		functionInstance.Namespace,
 		functionInstance.Name)
 	if err != nil {
-		errMessage, suspectedErrors := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
-		return nil, suspectedErrors, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
+		errMessage := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
+		return nil, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
 	}
 
 	return &platform.CreateFunctionResult{
 		Port: functionInstance.Status.HTTPPort,
-	}, "", nil
+	}, nil
 }
 
 func waitForFunctionReadiness(loggerInstance logger.Logger,
@@ -242,7 +242,6 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			podLogsMessage += "Failed to read logs: " + getLogsErr.Error() + "\n"
 		}
 
-		var lastProcessorLogLine string
 		scanner := bufio.NewScanner(logsRequest)
 
 		// get only first MaxLogLines logs
@@ -253,22 +252,17 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 				currentLogLine, err := d.prettifyPodLog(scanner.Bytes())
 				if err != nil {
 
-					// when it is not a structured log add it to the suspected errors
-					suspectedErrors += scanner.Text() + "\n"
-					podLogsMessage += suspectedErrors
+					// when it is unstructured just add the log as a text
+					podLogsMessage += scanner.Text() + "\n"
 					continue
 				}
 
 				// when it is a processor log line
 				podLogsMessage += currentLogLine + "\n"
-				lastProcessorLogLine = currentLogLine
 			} else {
 				break
 			}
 		}
-
-		// add the last processor log line to the suspected errors
-		suspectedErrors = "Last processor log:\n" + lastProcessorLogLine + "\n\nSuspected errors:\n" + suspectedErrors
 
 		// close the stream
 		logsRequest.Close() // nolint: errcheck
