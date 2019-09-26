@@ -136,7 +136,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		return nil, errors.Wrap(err, "Create function options validation failed")
 	}
 
-	reportCreationError := func(suspectedError string, creationError error) error {
+	reportCreationError := func(suspectedErrors string, creationError error) error {
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
 			"err", creationError.Error())
 
@@ -159,7 +159,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			FunctionStatus: &functionconfig.Status{
 				HTTPPort: defaultHTTPPort,
 				State:    functionconfig.FunctionStateError,
-				Message:  suspectedError,
+				Message:  suspectedErrors,
 			},
 		})
 	}

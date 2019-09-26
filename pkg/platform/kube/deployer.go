@@ -167,8 +167,8 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 		functionInstance.Namespace,
 		functionInstance.Name)
 	if err != nil {
-		errMessage, suspectedError := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
-		return nil, suspectedError, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
+		errMessage, suspectedErrors := d.getFunctionPodLogs(functionInstance.Namespace, functionInstance.Name)
+		return nil, suspectedErrors, errors.Wrapf(err, "Failed to wait for function readiness.\n%s", errMessage)
 	}
 
 	return &platform.CreateFunctionResult{
@@ -207,7 +207,7 @@ func waitForFunctionReadiness(loggerInstance logger.Logger,
 }
 
 func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, string) {
-	var suspectedError string
+	var suspectedErrors string
 	podLogsMessage := "\nPod logs:\n"
 
 	// list pods
@@ -250,27 +250,58 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 
 			// check if there's a next line from logsRequest
 			if scanner.Scan() {
-				if !json.Valid(scanner.Bytes()) {
+				currentLogLine, err := d.prettifyPodLog(scanner.Bytes())
+				if err != nil {
 
-					// save the unstructured lines as suspected error
-					suspectedError += scanner.Text() + "\n"
-				} else {
-					lastProcessorLogLine = scanner.Text()
+					// when it is not a structured log add it to the suspected errors
+					suspectedErrors += scanner.Text() + "\n"
 				}
 
-				// read the current token and append to logs
-				podLogsMessage += scanner.Text() + "\n"
+				// when it is a processor log line
+				podLogsMessage += currentLogLine + "\n"
+				lastProcessorLogLine = currentLogLine
 			} else {
 				break
 			}
 		}
 
-		// add the last processor log line to the suspected error
-		suspectedError = "Last processor log:\n" + lastProcessorLogLine + "\n\nSuspected error:\n" + suspectedError
+		// add the last processor log line to the suspected errors
+		suspectedErrors = "Last processor log:\n" + lastProcessorLogLine + "\n\nSuspected errors:\n" + suspectedErrors
 
 		// close the stream
 		logsRequest.Close() // nolint: errcheck
 	}
 
-	return common.FixEscapeChars(podLogsMessage), common.FixEscapeChars(suspectedError)
+	return common.FixEscapeChars(podLogsMessage), common.FixEscapeChars(suspectedErrors)
+}
+
+func (d *deployer) prettifyPodLog(log []byte) (string, error) {
+	logStruct := struct {
+		Time    *string `json:"time"`
+		Level   *string `json:"level"`
+		Message *string `json:"message"`
+		More    *string `json:"more,omitempty"`
+	}{}
+
+	if err := json.Unmarshal(log, &logStruct); err != nil {
+		return "", err
+	}
+
+	// check required fields existence
+	if logStruct.Time == nil || logStruct.Level == nil || logStruct.Message == nil {
+		return "", errors.New("Missing required fields")
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339, *logStruct.Time)
+	if err != nil {
+		return "", err
+	}
+
+	res := fmt.Sprintf("[%s] (%c) %s [%s]",
+		parsedTime.Format("15:04:05.000"),
+		strings.ToUpper(*logStruct.Level)[0],
+		*logStruct.Message,
+		*logStruct.More)
+
+	return res, nil
 }
