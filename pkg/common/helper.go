@@ -163,7 +163,7 @@ func FixEscapeChars(s string) string {
 		"\\n": "\n",
 		"\\t": "\t",
 	}
-	strings.Replace()
+
 	for old, new := range escapeCharsMap {
 		s = strings.Replace(s, old, new, -1)
 	}
