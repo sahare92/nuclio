@@ -17,6 +17,7 @@ limitations under the License.
 package kube
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -137,16 +138,16 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 
 	reportCreationError := func(suspectedError string, creationError error) error {
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
-			"err", creationError)
+			"err", creationError.Error())
 
-		//errorStack := bytes.Buffer{}
-		//errors.PrintErrorStack(&errorStack, creationError, 20)
-		//
-		//// cut messages that are too big
-		//if errorStack.Len() >= 4*Mib {
-		//	errorStack.Truncate(4 * Mib)
-		//}
-		//
+		errorStack := bytes.Buffer{}
+		errors.PrintErrorStack(&errorStack, creationError, 20)
+
+		// cut messages that are too big
+		if errorStack.Len() >= 4*Mib {
+			errorStack.Truncate(4 * Mib)
+		}
+
 		defaultHTTPPort := 0
 		if existingFunctionInstance != nil {
 			defaultHTTPPort = existingFunctionInstance.Status.HTTPPort
