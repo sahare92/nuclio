@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/nuclio/nuclio/pkg/common"
 	"strconv"
 	"strings"
 	"time"
@@ -249,10 +250,9 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 
 			// check if there's a next line from logsRequest
 			if scanner.Scan() {
-				d.logger.DebugWith("scannedLine", "line", scanner.Text())
 				if !json.Valid(scanner.Bytes()) {
-					d.logger.Debug("invalid")
-					// save the unstructured lines as suspected
+
+					// save the unstructured lines as suspected error
 					suspectedError += scanner.Text() + "\n"
 				} else {
 					lastProcessorLogLine = scanner.Text()
@@ -266,7 +266,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 		}
 
 		// add the last processor log line to the suspected error
-		suspectedError = lastProcessorLogLine + "\n\n" + suspectedError
+		suspectedError = "Last processor log:\n" + lastProcessorLogLine + "\n\nSuspected error:\n" + common.FixEscapeChars(suspectedError)
 
 		// close the stream
 		logsRequest.Close() // nolint: errcheck

@@ -157,3 +157,16 @@ func RemoveWindowsCarriage(b []byte) []byte {
 	}
 	return b
 }
+
+func FixEscapeChars(s string) string {
+	escapeCharsMap := map[string]string{
+		"\\n": "\n",
+		"\\t": "\t",
+	}
+	strings.Replace()
+	for old, new := range escapeCharsMap {
+		s = strings.Replace(s, old, new, -1)
+	}
+
+	return s
+}

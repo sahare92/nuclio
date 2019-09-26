@@ -239,6 +239,8 @@ func (p *Platform) GetFunctions(getFunctionsOptions *platform.GetFunctionsOption
 	// iterate over functions and enrich with deploy logs
 	for _, function := range functions {
 
+		p.Logger.DebugWith("here are logs as it is", &function.GetStatus().Logs)
+
 		// enrich with build logs
 		if deployLogStream, exists := p.DeployLogStreams[function.GetConfig().Meta.GetUniqueID()]; exists {
 			deployLogStream.ReadLogs(nil, &function.GetStatus().Logs)
