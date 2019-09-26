@@ -206,8 +206,7 @@ func waitForFunctionReadiness(loggerInstance logger.Logger,
 	return function, err
 }
 
-func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, string) {
-	var suspectedErrors string
+func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 	podLogsMessage := "\nPod logs:\n"
 
 	// list pods
@@ -217,7 +216,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 
 	if listPodErr != nil {
 		podLogsMessage += "Failed to list pods: " + listPodErr.Error() + "\n"
-		return "", podLogsMessage
+		return podLogsMessage
 	}
 
 	if len(functionPods.Items) == 0 {
@@ -268,7 +267,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 		logsRequest.Close() // nolint: errcheck
 	}
 
-	return common.FixEscapeChars(podLogsMessage), common.FixEscapeChars(suspectedErrors)
+	return common.FixEscapeChars(podLogsMessage)
 }
 
 func (d *deployer) prettifyPodLog(log []byte) (string, error) {
