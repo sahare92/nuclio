@@ -140,18 +140,18 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
 			"err", creationError)
 
-		errorStack := bytes.Buffer{}
-		errors.PrintErrorStack(&errorStack, creationError, 20)
-
-		// cut messages that are too big
-		if errorStack.Len() >= 4*Mib {
-			errorStack.Truncate(4 * Mib)
-		}
-
-		defaultHTTPPort := 0
-		if existingFunctionInstance != nil {
-			defaultHTTPPort = existingFunctionInstance.Status.HTTPPort
-		}
+		//errorStack := bytes.Buffer{}
+		//errors.PrintErrorStack(&errorStack, creationError, 20)
+		//
+		//// cut messages that are too big
+		//if errorStack.Len() >= 4*Mib {
+		//	errorStack.Truncate(4 * Mib)
+		//}
+		//
+		//defaultHTTPPort := 0
+		//if existingFunctionInstance != nil {
+		//	defaultHTTPPort = existingFunctionInstance.Status.HTTPPort
+		//}
 
 		// post logs and error
 		return p.UpdateFunction(&platform.UpdateFunctionOptions{
@@ -239,11 +239,12 @@ func (p *Platform) GetFunctions(getFunctionsOptions *platform.GetFunctionsOption
 	// iterate over functions and enrich with deploy logs
 	for _, function := range functions {
 
-		p.Logger.DebugWith("here are logs as it is", "logs", &function.GetStatus().Logs)
-
 		// enrich with build logs
 		if deployLogStream, exists := p.DeployLogStreams[function.GetConfig().Meta.GetUniqueID()]; exists {
 			deployLogStream.ReadLogs(nil, &function.GetStatus().Logs)
+			if function.GetConfig().Meta.Name == "func2" {
+				p.Logger.DebugWith("the logs are", "logs", function.GetStatus().Logs)
+			}
 		}
 	}
 
