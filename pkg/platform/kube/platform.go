@@ -137,10 +137,16 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	}
 
 	reportCreationError := func(suspectedErrors string, creationError error) error {
-		var message string
+		var err interface{}
+
+		if creationError.Error() != "" {
+			err = creationError.Error()
+		} else {
+			err = creationError
+		}
 
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
-			"err", creationError.Error())
+			"err", err)
 
 		errorStack := bytes.Buffer{}
 		errors.PrintErrorStack(&errorStack, creationError, 20)
@@ -155,19 +161,13 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			defaultHTTPPort = existingFunctionInstance.Status.HTTPPort
 		}
 
-		if suspectedErrors != "" {
-			message = suspectedErrors
-		} else {
-			message = errorStack.String()
-		}
-
 		// post logs and error
 		return p.UpdateFunction(&platform.UpdateFunctionOptions{
 			FunctionMeta: &createFunctionOptions.FunctionConfig.Meta,
 			FunctionStatus: &functionconfig.Status{
 				HTTPPort: defaultHTTPPort,
 				State:    functionconfig.FunctionStateError,
-				Message:  message,
+				Message:  errorStack.String(),
 			},
 		})
 	}
