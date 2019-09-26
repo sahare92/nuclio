@@ -139,7 +139,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	reportCreationError := func(suspectedErrors string, creationError error) error {
 		var err interface{}
 
-		if creationError.Error() != "" {
+		if suspectedErrors != "" {
 			err = creationError.Error()
 		} else {
 			err = creationError
