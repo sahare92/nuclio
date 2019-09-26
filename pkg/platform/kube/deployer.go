@@ -266,11 +266,11 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 		}
 
 		// add the last processor log line to the suspected error
-		suspectedError = "Last processor log:\n" + lastProcessorLogLine + "\n\nSuspected error:\n" + common.FixEscapeChars(suspectedError)
+		suspectedError = "Last processor log:\n" + lastProcessorLogLine + "\n\nSuspected error:\n" + suspectedError
 
 		// close the stream
 		logsRequest.Close() // nolint: errcheck
 	}
 
-	return podLogsMessage, suspectedError
+	return common.FixEscapeChars(podLogsMessage), common.FixEscapeChars(suspectedError)
 }
