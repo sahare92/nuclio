@@ -242,9 +242,6 @@ func (p *Platform) GetFunctions(getFunctionsOptions *platform.GetFunctionsOption
 		// enrich with build logs
 		if deployLogStream, exists := p.DeployLogStreams[function.GetConfig().Meta.GetUniqueID()]; exists {
 			deployLogStream.ReadLogs(nil, &function.GetStatus().Logs)
-			if function.GetConfig().Meta.Name == "func2" {
-				p.Logger.DebugWith("the logs are", "logs", function.GetStatus().Logs)
-			}
 		}
 	}
 
