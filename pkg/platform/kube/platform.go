@@ -158,7 +158,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		if suspectedErrors != "" {
 			message = suspectedErrors
 		} else {
-			message = creationError.Error()
+			message = errorStack.String()
 		}
 
 		// post logs and error
