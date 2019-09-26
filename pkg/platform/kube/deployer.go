@@ -255,6 +255,8 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 
 					// when it is not a structured log add it to the suspected errors
 					suspectedErrors += scanner.Text() + "\n"
+					podLogsMessage += suspectedErrors
+					continue
 				}
 
 				// when it is a processor log line
