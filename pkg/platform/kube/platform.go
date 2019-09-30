@@ -149,7 +149,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		errors.PrintErrorStack(&errorStack, creationError, 20)
 
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
-			"err", errorStack)
+			"errorStack", errorStack.String())
 
 		// cut messages that are too big
 		if errorStack.Len() >= 4*Mib {
