@@ -137,19 +137,19 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	}
 
 	reportCreationError := func(creationError error, deploymentError bool) error {
-		var err interface{}
-
-		if deploymentError{
-			err = creationError.Error()
-		} else {
-			err = creationError
-		}
-
-		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
-			"err", err)
+		//var err interface{}
+		//
+		//if deploymentError{
+		//	err = creationError.Error()
+		//} else {
+		//	err = creationError
+		//}
 
 		errorStack := bytes.Buffer{}
 		errors.PrintErrorStack(&errorStack, creationError, 20)
+
+		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
+			"err", errorStack)
 
 		// cut messages that are too big
 		if errorStack.Len() >= 4*Mib {
