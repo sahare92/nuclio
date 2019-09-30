@@ -136,15 +136,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		return nil, errors.Wrap(err, "Create function options validation failed")
 	}
 
-	reportCreationError := func(creationError error, deploymentError bool) error {
-		//var err interface{}
-		//
-		//if deploymentError{
-		//	err = creationError.Error()
-		//} else {
-		//	err = creationError
-		//}
-
+	reportCreationError := func(creationError error) error {
 		errorStack := bytes.Buffer{}
 		errors.PrintErrorStack(&errorStack, creationError, 20)
 
@@ -216,7 +208,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		if buildErr != nil {
 
 			// try to report the error
-			reportCreationError(buildErr, false) // nolint: errcheck
+			reportCreationError(buildErr) // nolint: errcheck
 
 			return nil, buildErr
 		}
@@ -225,7 +217,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		if deployErr != nil {
 
 			// try to report the error
-			reportCreationError(deployErr, true) // nolint: errcheck
+			reportCreationError(deployErr) // nolint: errcheck
 
 			return nil, deployErr
 		}
