@@ -17,7 +17,6 @@ limitations under the License.
 package app
 
 import (
-	"encoding/json"
 	"os"
 	"time"
 
@@ -113,12 +112,9 @@ func NewProcessor(configurationPath string, platformConfigurationPath string) (*
 	// for now, use the same logger for both the processor and user handler
 	newProcessor.functionLogger = newProcessor.logger
 
-	indentedProcessorConfiguration, _ := json.MarshalIndent(processorConfiguration, "", "    ")
-	indentedPlatformConfiguration, _ := json.MarshalIndent(platformConfiguration, "", "    ")
-
 	newProcessor.logger.DebugWith("Read configuration",
-		"config", string(indentedProcessorConfiguration),
-		"platformConfig", string(indentedPlatformConfiguration))
+		"config", processorConfiguration,
+		"platformConfig", platformConfiguration)
 
 	// save platform configuration in process configuration
 	processorConfiguration.PlatformConfig = platformConfiguration
