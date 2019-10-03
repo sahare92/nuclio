@@ -246,17 +246,16 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 
 			// get the last MaxLogLines logs
 			for scanner.Scan() {
-				d.logger.DebugWith("scannedLine","line", scanner.Text())
-				//currentLogLine, err := d.prettifyPodLogLine(scanner.Bytes())
-				//if err != nil {
-				//
-				//	// when it is unstructured just add the log as a text
-				//	podLogsMessage += scanner.Text() + "\n"
-				//	continue
-				//}
-				//
-				//// when it is a processor log line
-				//podLogsMessage += currentLogLine + "\n"
+				currentLogLine, err := d.prettifyPodLogLine(scanner.Bytes())
+				if err != nil {
+
+					// when it is unstructured just add the log as a text
+					podLogsMessage += scanner.Text() + "\n"
+					continue
+				}
+
+				// when it is a processor log line
+				podLogsMessage += currentLogLine + "\n"
 			}
 
 			// close the stream
