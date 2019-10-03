@@ -248,6 +248,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) string {
 			for scanner.Scan() {
 				currentLogLine, err := d.prettifyPodLogLine(scanner.Bytes())
 				if err != nil {
+					d.logger.InfoWith("failed read line", "failure", err.Error())
 
 					// when it is unstructured just add the log as a text
 					podLogsMessage += scanner.Text() + "\n"
@@ -274,7 +275,7 @@ func (d *deployer) prettifyPodLogLine(log []byte) (string, error) {
 		More    *string `json:"more,omitempty"`
 	}{}
 
-	if len(log) > 0 && log[0] == byte('l') {
+	if len(log) > 0 && log[0] == 'l' {
 
 		// when it is a wrapper log line
 		wrapperLogStruct := struct {
