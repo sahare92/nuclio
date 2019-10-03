@@ -282,12 +282,14 @@ func (d *deployer) prettifyPodLogLine(log []byte) (string, error) {
 			Datetime *string `json:"datetime"`
 			Level    *string `json:"level"`
 			Message  *string `json:"message"`
-			With     *string `json:"with,omitempty"`
+			With     interface{} `json:"with,omitempty"`
 		}{}
 
 		if err := json.Unmarshal(log[1:], &wrapperLogStruct); err != nil {
 			return "", err
 		}
+
+		d.logger.InfoWith("outout", "o", wrapperLogStruct.With)
 
 		// manipulate the time format so it can be parsed later
 		unparsedTime := *wrapperLogStruct.Datetime + "Z"
@@ -297,7 +299,9 @@ func (d *deployer) prettifyPodLogLine(log []byte) (string, error) {
 		logStruct.Time = &unparsedTime
 		logStruct.Level = wrapperLogStruct.Level
 		logStruct.Message = wrapperLogStruct.Message
-		logStruct.More = wrapperLogStruct.With
+
+		more := wrapperLogStruct.With.(string)
+		logStruct.More = &more
 
 	} else {
 
