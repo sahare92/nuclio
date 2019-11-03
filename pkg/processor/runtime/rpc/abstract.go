@@ -209,7 +209,7 @@ func (r *AbstractRuntime) startWrapper() error {
 
 	var listener net.Listener
 	var address string
-
+	return errors.New("my error")
 	if r.runtime.GetSocketType() == UnixSocket {
 		listener, address, err = r.createUnixListener()
 	} else {
