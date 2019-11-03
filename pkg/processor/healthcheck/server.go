@@ -68,6 +68,10 @@ func (s *Server) Start() error {
 		if s.processor.GetStatus() != status.Ready {
 			return errors.New("Processor not ready yet")
 		}
+		if s.processor.GetWorkersStatus() == status.Error {
+			s.logger.Warn("Processor health check failed. Stopping the processor")
+			s.processor.Stop()
+		}
 
 		return nil
 	})
