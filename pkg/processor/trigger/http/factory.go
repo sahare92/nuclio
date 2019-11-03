@@ -46,6 +46,7 @@ func (f *factory) Create(parentLogger logger.Logger,
 
 	// set trigger name as worker allocator name
 	runtimeConfiguration.TriggerName = triggerConfiguration.WorkerAllocatorName
+	return nil, errors.New("Failed to create some trigger")
 
 	// get or create worker allocator
 	workerAllocator, err := f.GetWorkerAllocator(triggerConfiguration.WorkerAllocatorName,
