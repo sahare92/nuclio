@@ -25,6 +25,7 @@ type Provider interface {
 
 	// Returns the entity's status
 	GetStatus() Status
+	GetWorkersStatus() Status
 }
 
 // Status is runtime status

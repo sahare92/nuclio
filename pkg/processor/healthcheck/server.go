@@ -74,6 +74,9 @@ func (s *Server) Start() error {
 
 	// register an always-healthy liveness check until we have a better design for detecting handler deaths
 	s.handler.AddLivenessCheck("processor_liveness", func() error {
+		if s.processor.GetWorkersStatus() == status.Error {
+			return errors.New("Process liveness check failed")
+		}
 		return nil
 	})
 

@@ -244,6 +244,21 @@ func (p *Processor) GetStatus() status.Status {
 	return status.Ready
 }
 
+// GetStatus returns the processor's status based on its workers' readiness
+func (p *Processor) GetWorkersStatus() status.Status {
+	workers := p.GetWorkers()
+
+	// if any worker isn't ready yet, return initializing
+	for _, worker := range workers {
+		if worker.GetStatus() != status.Error {
+			return status.Initializing
+		}
+	}
+
+	// otherwise we're ready
+	return status.Ready
+}
+
 // Stop stops the processor
 func (p *Processor) Stop() {
 	p.stop <- true
