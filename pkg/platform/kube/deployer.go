@@ -255,6 +255,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			LabelSelector: fmt.Sprintf("nuclio.io/function-name=%s", name),
 		})
 		if err != nil {
+			d.logger.InfoWith("Failed to get pod events", "err", err)
 			podLogsMessage += "Failed to get pod events\n"
 		}
 
