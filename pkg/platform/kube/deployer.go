@@ -256,6 +256,8 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			podLogsMessage += "Failed to get pod events\n"
 		}
 
+		d.logger.InfoWith("my events", "eventList", eventList.Items)
+
 		var podWarningEvents string
 		for _, event := range eventList.Items {
 			if event.Type == "Warning" {
