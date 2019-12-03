@@ -267,7 +267,7 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 		}
 
 		if podWarningEvents != "" {
-			eventsSummary := "\nPod warning events:\n" + podWarningEvents
+			eventsSummary := "\nWarnings:\n" + podWarningEvents
 			podLogsMessage += eventsSummary
 			briefErrorMessage += eventsSummary
 		}
