@@ -257,8 +257,6 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			podLogsMessage += "Failed to get pod events\n"
 		}
 
-		d.logger.InfoWith("my events", "eventList", eventList.Items)
-
 		var podWarningEvents string
 		for _, event := range eventList.Items {
 			if event.InvolvedObject.Name == pod.Name && event.Type == "Warning" {
@@ -266,8 +264,9 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			}
 		}
 
-		if podWarningEvents != "" {
-			eventsSummary := "\nWarnings:\n" + podWarningEvents
+		// if there is no brief error message and there are warning events - add them
+		if briefErrorMessage == "" && podWarningEvents != "" {
+			eventsSummary := "\n* Warnings:\n" + podWarningEvents
 			podLogsMessage += eventsSummary
 			briefErrorMessage += eventsSummary
 		}
