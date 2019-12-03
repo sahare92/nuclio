@@ -251,7 +251,9 @@ func (d *deployer) getFunctionPodLogs(namespace string, name string) (string, st
 			logsRequest.Close() // nolint: errcheck
 		}
 
-		eventList, err := d.consumer.kubeClientSet.CoreV1().Events(namespace).Search(nil, &pod)
+		eventList, err := d.consumer.kubeClientSet.CoreV1().Events(namespace).List(meta_v1.ListOptions{
+			LabelSelector: fmt.Sprintf("nuclio.io/function-name=%s", name),
+		})
 		if err != nil {
 			podLogsMessage += "Failed to get pod events\n"
 		}
