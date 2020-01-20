@@ -17,6 +17,7 @@ limitations under the License.
 package trigger
 
 import (
+	"fmt"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/processor/runtime"
 	"github.com/nuclio/nuclio/pkg/processor/worker"
@@ -62,13 +63,11 @@ func (r *Registry) NewTrigger(logger logger.Logger,
 		runtimeConfiguration,
 		namedWorkerAllocators)
 	if err != nil {
-		logger.ErrorWith("Failed to create trigger",
+		logger.ErrorWith(fmt.Sprintf("Failed to create trigger, kind: %s, name: %s",kind,name),
+			"a", "b",
+			"c", "",
 			"kind", kind,
 			"triggerName", name)
-		logger.ErrorWith("Failed to create trigger2",
-			"kind", kind)
-		logger.WarnWith("Failed to create trigger - warn",
-			"kind", kind)
 	}
 
 	return trigger, err
