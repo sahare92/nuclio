@@ -65,6 +65,10 @@ func (r *Registry) NewTrigger(logger logger.Logger,
 		logger.ErrorWith("Failed to create trigger",
 			"kind", kind,
 			"triggerName", name)
+		logger.ErrorWith("Failed to create trigger2",
+			"kind", kind)
+		logger.WarnWith("Failed to create trigger - warn",
+			"kind", kind)
 	}
 
 	return trigger, err
