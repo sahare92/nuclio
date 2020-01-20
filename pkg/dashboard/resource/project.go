@@ -172,10 +172,11 @@ func (pr *projectResource) deleteProject(request *http.Request) (*restful.Custom
 	err = pr.getPlatform().DeleteProject(&deleteProjectOptions)
 	if err != nil {
 		pr.Logger.InfoWith("teststatus",
-			"status", pr.GetStatusCodeFromError(err, http.StatusInternalServerError))
+			"status", pr.GetStatusCodeFromErrorCause(err, http.StatusInternalServerError))
+
 		return &restful.CustomRouteFuncResponse{
 			Single:     true,
-			StatusCode: pr.GetStatusCodeFromError(err, http.StatusInternalServerError),
+			StatusCode: pr.GetStatusCodeFromErrorCause(err, http.StatusInternalServerError),
 		}, err
 	}
 
