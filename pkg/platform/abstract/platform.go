@@ -484,7 +484,7 @@ func (ap *Platform) getMessageAndArgs (message string, args *string, log []byte)
 
 	// format result depending on args/additional kwargs existence
 	if argsAsString != "" && additionalKwargsAsString != "" {
-		return fmt.Sprintf("%s [%s,\n%s]", message, argsAsString, additionalKwargsAsString)
+		return fmt.Sprintf("%s [%s || %s]", message, argsAsString, additionalKwargsAsString)
 	} else if argsAsString != "" {
 		return fmt.Sprintf("%s [%s]", message, argsAsString)
 	} else if additionalKwargsAsString != "" {
