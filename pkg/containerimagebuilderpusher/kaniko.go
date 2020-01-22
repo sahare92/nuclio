@@ -271,7 +271,7 @@ func (k *Kaniko) waitForKanikoJobCompletion(namespace string, jobName string, Bu
 			return nil
 		}
 		if runningJob.Status.Failed > 0 {
-			jobLogs, briefErrorsMessage, err := k.getJobLogs(namespace, jobName)
+			jobLogs, err := k.getJobLogs(namespace, jobName)
 			if err != nil {
 				return errors.Wrap(err, "Failed to retrieve kaniko job logs")
 			}
@@ -280,25 +280,20 @@ func (k *Kaniko) waitForKanikoJobCompletion(namespace string, jobName string, Bu
 
 			// returning as error only the brief error message - so it'll be the one kept under concise error tab on UI
 			// (the full logs are logged in the previous line and can be seen in the full build log)
-			return fmt.Errorf("Kaniko job failed. Brief errors message:\n%s", briefErrorsMessage)
+			return fmt.Errorf("Kaniko job failed. Job logs:\n%s", jobLogs)
 		}
 
 		time.Sleep(10 * time.Second)
 	}
-	jobLogs, briefErrorsMessage, err := k.getJobLogs(namespace, jobName)
+	jobLogs, err := k.getJobLogs(namespace, jobName)
 	if err != nil {
 		return errors.Wrap(err, "Failed to retrieve kaniko job logs")
 	}
-	k.logger.ErrorWith("Kaniko job has timed out",
-		"jobLogs", jobLogs)
 
-	// returning as error only the brief error message - so it'll be the one kept under concise error tab on UI
-	// (the full logs are logged in the previous line and can be seen in the full build log)
-	return fmt.Errorf("kaniko job has timed out. Brief errors message:\n%s", briefErrorsMessage)
+	return fmt.Errorf("Kaniko job has timed out. Job logs:\n%s", jobLogs)
 }
 
-// Get job logs from kaniko, prettifies them, and returns - (fullPrettifiedLogs, briefErrorsMessage, error)
-func (k *Kaniko) getJobLogs(namespace string, jobName string) (string, string, error) {
+func (k *Kaniko) getJobLogs(namespace string, jobName string) (string, error) {
 	k.logger.DebugWith("Fetching kaniko job logs", "namespace", namespace, "job", jobName)
 
 	// list pods
@@ -307,13 +302,13 @@ func (k *Kaniko) getJobLogs(namespace string, jobName string) (string, string, e
 	})
 
 	if err != nil {
-		return "", "", errors.Wrapf(err, "Failed to list job's pods")
+		return "", errors.Wrapf(err, "Failed to list job's pods")
 	}
 	if len(jobPods.Items) == 0 {
-		return "", "", errors.New("No pods found for job")
+		return "", errors.New("No pods found for job")
 	}
 	if len(jobPods.Items) > 1 {
-		return "", "", errors.New("Got too many job pods")
+		return "", errors.New("Got too many job pods")
 	}
 
 	// find job pod
@@ -324,60 +319,43 @@ func (k *Kaniko) getJobLogs(namespace string, jobName string) (string, string, e
 
 	restReadCloser, err := restClientRequest.Stream()
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to get log read/closer")
+		return "", errors.Wrap(err, "Failed to get log read/closer")
 	}
 
 	defer restReadCloser.Close() // nolint: errcheck
 
 	logContents, err := ioutil.ReadAll(restReadCloser)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to read logs")
+		return "", errors.Wrap(err, "Failed to read logs")
 	}
 
-	formattedLogContents, briefErrorsMessage := k.prettifyLogContents(string(logContents))
+	formattedLogContents := k.prettifyLogContents(string(logContents))
 
-	return formattedLogContents, briefErrorsMessage, nil
+	return formattedLogContents, nil
 }
 
-func (k *Kaniko) prettifyLogContents(logContents string) (string, string) {
+func (k *Kaniko) prettifyLogContents(logContents string) string {
 	scanner := bufio.NewScanner(strings.NewReader(logContents))
 
 	formattedLogLinesArray := &[]string{}
-	briefErrorsMessage := &[]string{}
 
 	for scanner.Scan() {
 		logLine := scanner.Text()
 
-		prettifiedLogLine := k.prettifyLogLine(logLine, briefErrorsMessage)
-
-		if k.shouldAddToBriefError(prettifiedLogLine) {
-			*briefErrorsMessage = append(*briefErrorsMessage, prettifiedLogLine)
-		}
+		prettifiedLogLine := k.prettifyLogLine(logLine)
 
 		*formattedLogLinesArray = append(*formattedLogLinesArray, prettifiedLogLine)
 	}
 
-	return strings.Join(*formattedLogLinesArray, "\n"), strings.Join(*briefErrorsMessage, "\n")
+	return strings.Join(*formattedLogLinesArray, "\n")
 }
 
-func (k *Kaniko) prettifyLogLine(logLine string, briefErrorsMessage *[]string) string {
+func (k *Kaniko) prettifyLogLine(logLine string) string {
 
 	// remove ansi color characters generated automatically by kaniko - so the log will be human readable on the UI
 	logLine = common.RemoveANSIColorsFromString(logLine)
 
 	return logLine
-}
-
-func (k *Kaniko) shouldAddToBriefError(logLine string) bool {
-	irrelevantLogLevels := []string{"DEBU","INFO"}
-
-	for _, logLevel := range irrelevantLogLevels {
-		if !strings.HasPrefix(logLine, logLevel) {
-			return false
-		}
-	}
-
-	return true
 }
 
 func (k *Kaniko) deleteJob(namespace string, jobName string) error {
