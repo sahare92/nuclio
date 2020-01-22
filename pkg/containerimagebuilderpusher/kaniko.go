@@ -363,8 +363,8 @@ func (k *Kaniko) prettifyLogLine(logLine string, briefErrorsMessage *[]string) s
 
 	// remove escaped characters
 	k.logger.InfoWith("pretiffying line", "logLine", logLine, "firstChar", logLine[0], "secondChar", logLine[1], "3rdChar", logLine[2], "4thChar", logLine[3])
-	for _, color := range []string{"\u001b[30m","\u001b[31m","\u001b[32m","\u001b[33m","\u001b[34m","\u001b[35m","\u001b[36m","\u001b[37m","\u001b[0m"} {
-		strings.Replace(logLine, color, "", -1)
+	for _, color := range []string{"\x1b[30m","\x1b[31m","\x1b[32m","\x1b[33m","\x1b[34m","\x1b[35m","\x1b[36m","\x1b[37m","\x1b[0m"} {
+		logLine = strings.Replace(logLine, color, "", -1)
 	}
 
 	return logLine
