@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 
 	"github.com/nuclio/logger"
 	batch_v1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -364,8 +363,9 @@ func (k *Kaniko) prettifyLogLine(logLine string, briefErrorsMessage *[]string) s
 
 	// remove escaped characters
 	k.logger.InfoWith("pretiffying line", "logLine", logLine)
-	re := regexp.MustCompile(`\\u001b\[[0-9]*m`)
-	logLine = re.ReplaceAllString(logLine, "")
+	for _, color := range []string{"\u001b[30m","\u001b[31m","\u001b[32m","\u001b[33m","\u001b[34m","\u001b[35m","\u001b[36m","\u001b[37m","\u001b[0m"} {
+		strings.Replace(logLine, color, "", -1)
+	}
 
 	return logLine
 }
