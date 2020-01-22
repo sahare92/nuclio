@@ -373,11 +373,11 @@ func (k *Kaniko) shouldAddToBriefError(logLine string) bool {
 
 	for _, logLevel := range irrelevantLogLevels {
 		if !strings.HasPrefix(logLine, logLevel) {
-			return true
+			return false
 		}
 	}
 
-	return false
+	return true
 }
 
 func (k *Kaniko) deleteJob(namespace string, jobName string) error {
