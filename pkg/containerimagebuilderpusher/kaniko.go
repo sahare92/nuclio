@@ -363,7 +363,7 @@ func (k *Kaniko) prettifyLogContents(logContents string) (string, string) {
 func (k *Kaniko) prettifyLogLine(logLine string, briefErrorsMessage *[]string) string {
 
 	// remove escaped characters
-	re := regexp.MustCompile(`(?:\\u001b[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]`)
+	re := regexp.MustCompile(`\\u001b\[[0-9]*m`)
 	logLine = re.ReplaceAllString(logLine, "")
 
 	return logLine
