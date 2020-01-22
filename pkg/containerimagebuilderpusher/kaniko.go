@@ -280,11 +280,7 @@ func (k *Kaniko) waitForKanikoJobCompletion(namespace string, jobName string, Bu
 			if err != nil {
 				return errors.Wrap(err, "Failed to retrieve kaniko job logs")
 			}
-			k.logger.ErrorWith("Kaniko job has failed",
-				"jobLogs", jobLogs)
 
-			// returning as error only the brief error message - so it'll be the one kept under concise error tab on UI
-			// (the full logs are logged in the previous line and can be seen in the full build log)
 			return fmt.Errorf("Kaniko job failed. Job logs:\n%s", jobLogs)
 		}
 
