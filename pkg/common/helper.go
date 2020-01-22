@@ -81,6 +81,14 @@ func StringSliceContainsString(slice []string, str string) bool {
 	return false
 }
 
+func RemoveANSIColorsFromString(s string) string {
+	for _, color := range []string{"\x1b[30m","\x1b[31m","\x1b[32m","\x1b[33m","\x1b[34m","\x1b[35m","\x1b[36m","\x1b[37m","\x1b[0m"} {
+		s = strings.Replace(s, color, "", -1)
+	}
+
+	return s
+}
+
 // RetryUntilSuccessful calls callback every interval for duration until it returns true
 func RetryUntilSuccessful(duration time.Duration, interval time.Duration, callback func() bool) error {
 	deadline := time.Now().Add(duration)

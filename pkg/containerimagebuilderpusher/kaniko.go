@@ -7,16 +7,16 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/errors"
 	"github.com/nuclio/nuclio/pkg/processor/build/runtime"
 
 	"github.com/nuclio/logger"
 	batch_v1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -362,9 +362,8 @@ func (k *Kaniko) prettifyLogContents(logContents string) (string, string) {
 
 func (k *Kaniko) prettifyLogLine(logLine string, briefErrorsMessage *[]string) string {
 
-	// remove escaped characters
-	re := regexp.MustCompile(`\\u001b\[[0-9]*m`)
-	logLine = re.ReplaceAllString(logLine, "")
+	// remove ansi color characters generated automatically by kaniko - so the log will be human readable on the UI
+	logLine = common.RemoveANSIColorsFromString(logLine)
 
 	return logLine
 }
