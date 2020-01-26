@@ -211,7 +211,7 @@ func PrintErrorStack(out io.Writer, err error, depth int, printOnlyError bool) {
 		fmt.Fprintf(out, "\nError - %s", stack[0].Error()) // nolint: errcheck
 	}
 
-	if !printOnlyError {
+	if printOnlyError {
 		fmt.Fprintf(out, "\nCall stack:") // nolint: errcheck
 
 		for _, e := range stack {

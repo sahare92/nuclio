@@ -144,8 +144,9 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 
 	reportCreationError := func(creationError error, briefErrorsMessage string) error {
 		errorStack := bytes.Buffer{}
+		p.Logger.Info("starting collecting report")
 		errors.PrintErrorStack(&errorStack, creationError, 20, false)
-
+		p.Logger.Info("collecting report 1")
 		// cut messages that are too big
 		if errorStack.Len() >= 4*Mib {
 			errorStack.Truncate(4 * Mib)
@@ -157,11 +158,13 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			errors.PrintErrorStack(&lastError, creationError, 1, true)
 			briefErrorsMessage = lastError.String()
 		}
-
+		p.Logger.Info("collecting report 2")
 		defaultHTTPPort := 0
 		if existingFunctionInstance != nil {
 			defaultHTTPPort = existingFunctionInstance.Status.HTTPPort
 		}
+
+		p.Logger.InfoWith("finised collecting report", "briefErrorMessage", briefErrorsMessage)
 
 		// post logs and error
 		return p.UpdateFunction(&platform.UpdateFunctionOptions{
