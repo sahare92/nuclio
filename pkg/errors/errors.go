@@ -211,17 +211,17 @@ func PrintErrorStack(out io.Writer, err error, depth int, printOnlyError bool) {
 		fmt.Fprintf(out, "\nError - %s", stack[0].Error()) // nolint: errcheck
 	}
 
-	if !printOnlyError {
-		fmt.Fprintf(out, "\nCall stack:") // nolint: errcheck
-
-		for _, e := range stack {
-			errObj := asError(e)
-			fmt.Fprintf(out, "\n%s", e.Error()) // nolint: errcheck
-			if errObj != nil && errObj.lineNumber != 0 {
-				fmt.Fprintf(out, "\n    %s:%d", trimPath(errObj.fileName, pathLen), errObj.lineNumber) // nolint: errcheck
-			}
-		}
-	}
+	//if !printOnlyError {
+	//	fmt.Fprintf(out, "\nCall stack:") // nolint: errcheck
+	//
+	//	for _, e := range stack {
+	//		errObj := asError(e)
+	//		fmt.Fprintf(out, "\n%s", e.Error()) // nolint: errcheck
+	//		if errObj != nil && errObj.lineNumber != 0 {
+	//			fmt.Fprintf(out, "\n    %s:%d", trimPath(errObj.fileName, pathLen), errObj.lineNumber) // nolint: errcheck
+	//		}
+	//	}
+	//}
 
 	out.Write([]byte{'\n'}) // nolint: errcheck
 }
