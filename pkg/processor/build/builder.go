@@ -914,6 +914,10 @@ func (b *Builder) prepareStagingDir() error {
 func (b *Builder) getHandlerSubPath() string {
 
 	// when it is a java function, and it is not structured as a java project - apply java project structure
+	b.logger.InfoWith("ran is java project dir",
+		"isProjectDir", common.IsJavaProjectDir(b.options.FunctionConfig.Spec.Build.Path),
+		"path", b.options.FunctionConfig.Spec.Build.Path)
+
 	if b.runtime.GetName() == "java" && !common.IsJavaProjectDir(b.options.FunctionConfig.Spec.Build.Path) {
 		return path.Join( "src", "main", "java")
 	}
