@@ -94,6 +94,8 @@ func (j *java) createGradleBuildScript(stagingBuildDir string) error {
 		return nil
 	}
 
+	j.Logger.DebugWith("debugging gradle", "path", gradleBuildScriptPath)
+
 	gradleBuildScriptTemplate, err := template.New("gradleBuildScript").Parse(j.getGradleBuildScriptTemplateContents())
 	if err != nil {
 		return errors.Wrap(err, "Failed to create gradle build script template")
