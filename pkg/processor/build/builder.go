@@ -934,9 +934,10 @@ func (b *Builder) copyHandlerToStagingDir(handlerSubPath string) error {
 	// we just want to copy the file from wherever it is to the staging dir root
 	for _, handlerDirObjectPath := range handlerDirObjectPaths {
 
+		b.logger.DebugWith("copying handler file","handlerDirObjectPath", handlerDirObjectPath, "handlerDirIncludingSubpath", handlerDirIncludingSubpath)
+
 		// copy the object (TODO: most likely will need to better support dirs)
 		if err := util.CopyTo(handlerDirObjectPath, handlerDirIncludingSubpath); err != nil {
-			b.logger.DebugWith("copying handler file","handlerDirObjectPath", handlerDirObjectPath, "handlerDirIncludingSubpath", handlerDirIncludingSubpath)
 			return errors.Wrap(err, "Failed to copy handler object")
 		}
 	}
