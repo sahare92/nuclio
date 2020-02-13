@@ -214,10 +214,10 @@ class Wrapper(object):
 #
 
 
-def create_logger(level):
+def create_logger(level, worker_id):
     """Create a logger that emits JSON to stdout"""
 
-    return nuclio_sdk.Logger(level)
+    return nuclio_sdk.Logger(level, worker_id)
 
 
 def parse_args():
@@ -254,7 +254,7 @@ def run_wrapper():
     args = parse_args()
 
     # create a logger instance. note: there are no outputters until socket is created
-    root_logger = create_logger(args.log_level)
+    root_logger = create_logger(args.log_level, args.worker_id)
 
     # add a logger output that is in a JSON format. we'll remove it once we have a socket output. this
     # way all output goes to stdout until a socket is available and then switches exclusively to socket
