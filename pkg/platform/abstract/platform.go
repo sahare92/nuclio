@@ -26,7 +26,6 @@ import (
 
 	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
-	"github.com/nuclio/nuclio/pkg/errors"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
@@ -34,6 +33,7 @@ import (
 	"github.com/nuclio/nuclio/pkg/processor/build/runtime"
 	"github.com/nuclio/nuclio/pkg/processor/trigger"
 
+	"github.com/nuclio/errors"
 	"github.com/nuclio/logger"
 )
 
@@ -628,7 +628,7 @@ func (ap *Platform) getLogLineAdditionalKwargs(log []byte) (map[string]string, e
 }
 
 func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage string) bool {
-	knownFailurePrefixes := [...]string{"Failed to connect to broker"}
+	knownFailureSubstrings := [...]string{"Failed to connect to broker"}
 
 	// when log level is warning or above
 	if logLevel != 'D' && logLevel != 'I' {
@@ -636,8 +636,8 @@ func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage str
 	}
 
 	// when the log message contains a known failure prefix
-	for _, prefix := range knownFailurePrefixes {
-		if strings.HasPrefix(logMessage, prefix) {
+	for _, knownFailureSubstring := range knownFailureSubstrings {
+		if strings.Contains(logMessage, knownFailureSubstring) {
 			return true
 		}
 	}
