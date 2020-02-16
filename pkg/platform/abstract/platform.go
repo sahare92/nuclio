@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -467,6 +468,7 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 		Time    *string `json:"time"`
 		Level   *string `json:"level"`
 		Message *string `json:"message"`
+		Name    *string `json:"name,omitempty"`
 		More    *string `json:"more,omitempty"`
 	}{}
 
@@ -477,6 +479,7 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 			Datetime *string           `json:"datetime"`
 			Level    *string           `json:"level"`
 			Message  *string           `json:"message"`
+			Name     *string           `json:"name,omitempty"`
 			With     map[string]string `json:"with,omitempty"`
 		}{}
 
@@ -492,6 +495,7 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 		logStruct.Time = &unparsedTime
 		logStruct.Level = wrapperLogStruct.Level
 		logStruct.Message = wrapperLogStruct.Message
+		logStruct.Name = wrapperLogStruct.Name
 
 		more := common.CreateKeyValuePairs(wrapperLogStruct.With)
 		logStruct.More = &more
@@ -516,7 +520,9 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 
 	logLevel := strings.ToUpper(*logStruct.Level)[0]
 
-	messageAndArgs := ap.getMessageAndArgs(*logStruct.Message, logStruct.More, log)
+	workerID := ap.getWorkerID(logStruct.Name)
+
+	messageAndArgs := ap.getMessageAndArgs(*logStruct.Message, logStruct.More, log, workerID)
 
 	res := fmt.Sprintf("[%s] (%c) %s",
 		parsedTime.Format("15:04:05.000"),
@@ -525,18 +531,47 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 
 	briefLogLine := ""
 	if ap.shouldAddToBriefErrorsMessage(logLevel, *logStruct.Message) {
-		briefLogLine = messageAndArgs
+		if workerID != "" && workerID != "0" {
+			briefLogLine = messageAndArgs
+		}
 	}
 
 	return res, briefLogLine, nil
 }
 
-func (ap *Platform) getMessageAndArgs(message string, args *string, log []byte) string {
+// get the worker ID from the logger name, can get both from processor and wrapper logger names.
+// logger name examples:
+// "processor.http.w5.python.logger" -> 5
+// "nuclio_sdk.w19" -> 19
+func (ap *Platform) getWorkerID(loggerName *string) string {
+	if loggerName == nil {
+		return ""
+	}
+
+	// try to find a matching pattern for the logger name and get the worker ID accordingly
+	processorRe := regexp.MustCompile(`^processor\..*\.w[0-9]+\..*`)
+	wrapperRe := regexp.MustCompile(`^nuclio_sdk\.w[0-9]+.*`)
+	if processorRe.MatchString(*loggerName) {
+		splitName := strings.Split(*loggerName, ".")
+		return splitName[2][1:]
+	} else if wrapperRe.MatchString(*loggerName) {
+		splitName := strings.Split(*loggerName, ".")
+		return splitName[1][1:]
+	}
+
+	return ""
+}
+
+func (ap *Platform) getMessageAndArgs(message string, args *string, log []byte, workerID string) string {
 	var argsAsString, additionalKwargsAsString string
 	additionalKwargs, err := ap.getLogLineAdditionalKwargs(log)
 	if err != nil {
 		ap.Logger.WarnWith("Failed to get log line's additional kwargs",
 			"logLineMessage", message)
+	}
+
+	if workerID != "" {
+		additionalKwargs["worker_id"] = workerID
 	}
 
 	if args != nil {
@@ -571,7 +606,7 @@ func (ap *Platform) getLogLineAdditionalKwargs(log []byte) (map[string]string, e
 
 	additionalKwargs := map[string]string{}
 
-	defaultArgs := []string{"time", "datetime", "level", "message", "with", "more"}
+	defaultArgs := []string{"time", "datetime", "level", "message", "with", "more", "name"}
 
 	// validate it is a suitable special arg
 	for argKey, argValue := range logAsMap {
