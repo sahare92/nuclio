@@ -464,6 +464,8 @@ func (ap *Platform) GetProcessorLogsAndBriefError(scanner *bufio.Scanner) (strin
 // Prettifies log line, and returns - (formattedLogLine, briefLogLine, error)
 // when line shouldn't be added to brief error message - briefLogLine will be an empty string ("")
 func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error) {
+	var workerID string
+
 	logStruct := struct {
 		Time    *string `json:"time"`
 		Level   *string `json:"level"`
@@ -497,8 +499,12 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 		logStruct.Message = wrapperLogStruct.Message
 		logStruct.Name = wrapperLogStruct.Name
 
-		more := common.CreateKeyValuePairs(wrapperLogStruct.With)
-		logStruct.More = &more
+		if wrapperLogStruct.With != nil {
+			workerID = wrapperLogStruct.With["worker_id"]
+
+			more := common.CreateKeyValuePairs(wrapperLogStruct.With)
+			logStruct.More = &more
+		}
 
 	} else {
 
@@ -520,7 +526,10 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 
 	logLevel := strings.ToUpper(*logStruct.Level)[0]
 
-	workerID := ap.getWorkerID(logStruct.Name)
+	// if worker ID wasn't explicitly given as an arg, infer worker ID from logger name
+	if workerID == "" {
+		workerID = ap.inferWorkerID(logStruct.Name)
+	}
 
 	messageAndArgs := ap.getMessageAndArgs(*logStruct.Message, logStruct.More, log, workerID)
 
@@ -530,33 +539,25 @@ func (ap *Platform) prettifyProcessorLogLine(log []byte) (string, string, error)
 		messageAndArgs)
 
 	briefLogLine := ""
-	if ap.shouldAddToBriefErrorsMessage(logLevel, *logStruct.Message) {
-		if workerID != "" && workerID != "0" {
-			briefLogLine = messageAndArgs
-		}
+	if ap.shouldAddToBriefErrorsMessage(logLevel, *logStruct.Message, workerID) {
+		briefLogLine = messageAndArgs
 	}
 
 	return res, briefLogLine, nil
 }
 
-// get the worker ID from the logger name, can get both from processor and wrapper logger names.
-// logger name examples:
+// get the worker ID from the logger name, for example:
 // "processor.http.w5.python.logger" -> 5
-// "nuclio_sdk.w19" -> 19
-func (ap *Platform) getWorkerID(loggerName *string) string {
+func (ap *Platform) inferWorkerID(loggerName *string) string {
 	if loggerName == nil {
 		return ""
 	}
 
-	// try to find a matching pattern for the logger name and get the worker ID accordingly
+	// if the logger name is the following pattern, extract the worker ID from it
 	processorRe := regexp.MustCompile(`^processor\..*\.w[0-9]+\..*`)
-	wrapperRe := regexp.MustCompile(`^nuclio_sdk\.w[0-9]+.*`)
 	if processorRe.MatchString(*loggerName) {
 		splitName := strings.Split(*loggerName, ".")
 		return splitName[2][1:]
-	} else if wrapperRe.MatchString(*loggerName) {
-		splitName := strings.Split(*loggerName, ".")
-		return splitName[1][1:]
 	}
 
 	return ""
@@ -627,7 +628,7 @@ func (ap *Platform) getLogLineAdditionalKwargs(log []byte) (map[string]string, e
 	return additionalKwargs, nil
 }
 
-func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage string) bool {
+func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, workerID string) bool {
 	knownFailureSubstrings := [...]string{"Failed to connect to broker"}
 
 	// when log level is warning or above
@@ -640,6 +641,12 @@ func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage str
 		if strings.Contains(logMessage, knownFailureSubstring) {
 			return true
 		}
+	}
+
+	// show errors only of the first worker
+	// done to prevent error duplication from several workers
+	if workerID == "" || workerID == "0" {
+		return true
 	}
 
 	return false
