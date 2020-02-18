@@ -276,6 +276,8 @@ def run_wrapper():
     # bind worker_id to the logger
     root_logger.bind(worker_id=args.worker_id)
 
+    root_logger.info_with("binded worker", worker_id=args.worker_id)
+
     try:
 
         # create a new wrapper
