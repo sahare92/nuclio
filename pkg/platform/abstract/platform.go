@@ -645,8 +645,8 @@ func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, wo
 
 	// show errors only of the first worker
 	// done to prevent error duplication from several workers
-	if workerID == "" || workerID == "0" {
-		return true
+	if workerID != "" && workerID != "0" {
+		return false
 	}
 
 	return false

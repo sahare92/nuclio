@@ -274,7 +274,7 @@ def run_wrapper():
     root_logger.set_handler('default', sys.stdout, nuclio_sdk.logger.JSONFormatter())
 
     # bind worker_id to the logger
-    # root_logger.bind(worker_id=args.worker_id)
+    root_logger.bind(worker_id=args.worker_id)
 
     try:
 
