@@ -631,6 +631,12 @@ func (ap *Platform) getLogLineAdditionalKwargs(log []byte) (map[string]string, e
 func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, workerID string) bool {
 	knownFailureSubstrings := [...]string{"Failed to connect to broker"}
 
+	// show errors only of the first worker
+	// done to prevent error duplication from several workers
+	if workerID != "" && workerID != "0" {
+		return false
+	}
+
 	// when log level is warning or above
 	if logLevel != 'D' && logLevel != 'I' {
 		return true
@@ -641,12 +647,6 @@ func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, wo
 		if strings.Contains(logMessage, knownFailureSubstring) {
 			return true
 		}
-	}
-
-	// show errors only of the first worker
-	// done to prevent error duplication from several workers
-	if workerID != "" && workerID != "0" {
-		return false
 	}
 
 	return false
