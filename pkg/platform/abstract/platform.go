@@ -571,15 +571,15 @@ func (ap *Platform) getMessageAndArgs(message string, args *string, log []byte, 
 			"logLineMessage", message)
 	}
 
-	if workerID != "" {
-		additionalKwargs["worker_id"] = workerID
-	}
-
 	if args != nil {
 		argsAsString = *args
 	}
 
 	if additionalKwargs != nil {
+		if workerID != "" {
+			additionalKwargs["worker_id"] = workerID
+		}
+
 		additionalKwargsAsString = common.CreateKeyValuePairs(additionalKwargs)
 	}
 
