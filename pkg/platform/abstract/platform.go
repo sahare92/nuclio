@@ -433,6 +433,7 @@ func (ap *Platform) functionBuildRequired(createFunctionOptions *platform.Create
 
 func (ap *Platform) GetProcessorLogsAndBriefError(scanner *bufio.Scanner) (string, string) {
 	var formattedProcessorLogs, briefErrorsMessage string
+	var stopCollectingBriefErrorsMessage bool
 
 	briefErrorsArray := &[]string{}
 
@@ -443,11 +444,21 @@ func (ap *Platform) GetProcessorLogsAndBriefError(scanner *bufio.Scanner) (strin
 
 			// when it is unstructured just add the log as a text
 			formattedProcessorLogs += rawLogLine + "\n"
-			*briefErrorsArray = append(*briefErrorsArray, rawLogLine)
+
+			// if there's a panic stop appending log lines to the briefErrorsMessage (unnecessary information from now on)
+			// the panic can still be seen in the full logs
+			if strings.HasPrefix(briefLogLine, "panic: Wrapper") {
+				stopCollectingBriefErrorsMessage = true
+			}
+
+			if !stopCollectingBriefErrorsMessage {
+				*briefErrorsArray = append(*briefErrorsArray, rawLogLine)
+			}
+
 			continue
 		}
 
-		if briefLogLine != "" {
+		if !stopCollectingBriefErrorsMessage && briefLogLine != "" {
 			*briefErrorsArray = append(*briefErrorsArray, briefLogLine)
 		}
 
@@ -629,7 +640,8 @@ func (ap *Platform) getLogLineAdditionalKwargs(log []byte) (map[string]string, e
 }
 
 func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, workerID string) bool {
-	knownFailureSubstrings := [...]string{"Failed to connect to broker"}
+	knownFailureSubstrings := [...]string{"Failed to connect to broker",
+		"Unexpected termination of child process"}
 
 	// show errors only of the first worker
 	// done to prevent error duplication from several workers
