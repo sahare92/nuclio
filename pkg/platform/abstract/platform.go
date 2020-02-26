@@ -642,8 +642,15 @@ func (ap *Platform) getLogLineAdditionalKwargs(log []byte) (map[string]string, e
 }
 
 func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, workerID string) bool {
-	knownFailureSubstrings := [...]string{"Failed to connect to broker",
-		"Unexpected termination of child process"}
+	knownFailureSubstrings := [...]string{"Failed to connect to broker"}
+	ignoreFailureSubstrings := [...]string{"Unexpected termination of child process"}
+
+	// when the log message contains a known failure prefix
+	for _, ignoreFailureSubstring := range ignoreFailureSubstrings {
+		if strings.Contains(logMessage, ignoreFailureSubstring) {
+			return false
+		}
+	}
 
 	// show errors only of the first worker
 	// done to prevent error duplication from several workers
