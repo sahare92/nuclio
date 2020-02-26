@@ -645,7 +645,7 @@ func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, wo
 	knownFailureSubstrings := [...]string{"Failed to connect to broker"}
 	ignoreFailureSubstrings := [...]string{"Unexpected termination of child process"}
 
-	// when the log message contains a known failure prefix
+	// when the log message contains a failure that should be ignored
 	for _, ignoreFailureSubstring := range ignoreFailureSubstrings {
 		if strings.Contains(logMessage, ignoreFailureSubstring) {
 			return false
@@ -663,7 +663,7 @@ func (ap *Platform) shouldAddToBriefErrorsMessage(logLevel uint8, logMessage, wo
 		return true
 	}
 
-	// when the log message contains a known failure prefix
+	// when the log message contains a known failure substring
 	for _, knownFailureSubstring := range knownFailureSubstrings {
 		if strings.Contains(logMessage, knownFailureSubstring) {
 			return true
