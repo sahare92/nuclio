@@ -139,12 +139,15 @@ func (fp *fixedPool) Allocate(timeout time.Duration) (*Worker, error) {
 
 		return workerInstance, nil
 	default:
+		fp.logger.Info("didnt allocate")
 
 		// if there's no timeout, return now
 		if timeout == 0 {
+			fp.logger.Info("timeout is 0")
 			fp.statistics.WorkerAllocationTimeoutTotal++
 			return nil, ErrNoAvailableWorkers
 		}
+		fp.logger.Info("timeout not 0")
 
 		waitStartAt := time.Now()
 
@@ -152,6 +155,7 @@ func (fp *fixedPool) Allocate(timeout time.Duration) (*Worker, error) {
 		// to pass
 		select {
 		case workerInstance := <-fp.workerChan:
+			fp.logger.Info("after wait allocation")
 			fp.statistics.WorkerAllocationSuccessAfterWaitTotal++
 			fp.statistics.WorkerAllocationWaitDurationMilliSecondsSum += uint64(time.Since(waitStartAt).Nanoseconds() / 1e6)
 			return workerInstance, nil
