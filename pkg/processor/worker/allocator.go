@@ -135,11 +135,12 @@ func (fp *fixedPool) Allocate(timeout time.Duration) (*Worker, error) {
 	// try to allocate a worker and fall back to default immediately if there's none available
 	select {
 	case workerInstance := <-fp.workerChan:
+		fp.logger.Info("allocated properly")
 		fp.statistics.WorkerAllocationSuccessImmediateTotal++
 
 		return workerInstance, nil
 	default:
-		fp.logger.Info("didnt allocate")
+		fp.logger.InfoWith("didnt allocate", "timeout", timeout)
 
 		// if there's no timeout, return now
 		if timeout == 0 {
@@ -147,7 +148,7 @@ func (fp *fixedPool) Allocate(timeout time.Duration) (*Worker, error) {
 			fp.statistics.WorkerAllocationTimeoutTotal++
 			return nil, ErrNoAvailableWorkers
 		}
-		fp.logger.Info("timeout not 0")
+		fp.logger.InfoWith("timeout not 0", "timeout", timeout)
 
 		waitStartAt := time.Now()
 
