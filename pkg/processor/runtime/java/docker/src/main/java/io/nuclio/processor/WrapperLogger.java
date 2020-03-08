@@ -35,7 +35,7 @@ public class WrapperLogger implements Logger {
     public WrapperLogger(OutputStream out) {
         this.out = new BufferedOutputStream(out);
         this.gson = new Gson();
-        this.workerID = 0;
+        this.workerID = "0";
     }
 
     /**

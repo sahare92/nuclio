@@ -26,7 +26,7 @@ class WrapperContext implements Context {
     private WrapperLogger logger;
 
     public WrapperContext(OutputStream out, String workerID) {
-        this.logger = new WrapperLogger(out, workerID);
+        this.logger = new WrapperLogger(out);
     }
 
     @Override
