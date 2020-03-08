@@ -34,7 +34,7 @@ import org.apache.commons.cli.*;
 public class Wrapper {
     private static boolean verbose = false;
     private static SimpleDateFormat dateFormat;
-    private static String usage = "wrapper -handler HANDLER -port PORT";
+    private static String usage = "wrapper -handler HANDLER -port PORT -worker-id WORKER_ID";
 
     static {
         dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -84,6 +84,7 @@ public class Wrapper {
         String[][] optsArray = {
                 {"handler", "handler class name"},
                 {"port", "communication port"},
+                {"worker_id", "worker id"},
         };
 
         Options options = new Options();
@@ -143,7 +144,7 @@ public class Wrapper {
         debugLog("port: %d", port);
 
         Socket sock = new Socket("localhost", port);
-        String workerID = "0";
+        String workerID = cmd.getOptionValue("worker_id");
         WrapperLogger wrapperLogger = new WrapperLogger(sock.getOutputStream());
         wrapperLogger.error("here 1");
         Context context = new WrapperContext(sock.getOutputStream(), workerID);
