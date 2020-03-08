@@ -145,7 +145,7 @@ public class Wrapper {
 
         Socket sock = new Socket("localhost", port);
         String workerID = cmd.getOptionValue("worker-id");
-        WrapperLogger wrapperLogger = new WrapperContext(sock.getOutputStream(), workerID);
+        WrapperLogger wrapperLogger = new WrapperLogger(sock.getOutputStream(), workerID);
         wrapperLogger.error("here 1");
         Context context = new WrapperContext(sock.getOutputStream(), workerID);
         wrapperLogger.error("here 2");
