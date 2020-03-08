@@ -145,21 +145,27 @@ public class Wrapper {
 
         Socket sock = new Socket("localhost", port);
         String workerID = cmd.getOptionValue("worker-id");
+        WrapperLogger wrapperLogger = new WrapperContext(sock.getOutputStream(), workerID);
+        wrapperLogger.error("here 1");
         Context context = new WrapperContext(sock.getOutputStream(), workerID);
+        wrapperLogger.error("here 2");
         Logger logger = context.getLogger();
+        wrapperLogger.error("here 3");
 
         try {
             handler = loadHandler(handlerClassName);
             debugLog("Handler %s loaded", handlerClassName);
         } catch (Exception e) {
+            wrapperLogger.error("here 4");
             logger.errorWith("Failed to load handler", "handlerClassName", handlerClassName, "error", e.toString());
             System.exit(1);
             return;
         }
-
+        wrapperLogger.error("here 5");
         ResponseEncoder responseEncoder = new ResponseEncoder(sock.getOutputStream());
+        wrapperLogger.error("here 6");
         EventReader eventReader = new EventReader(sock.getInputStream());
-
+        wrapperLogger.error("here 7");
         Response response;
         Long start = 0L, end = 0L;
 
