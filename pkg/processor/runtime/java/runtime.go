@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/nuclio/nuclio/pkg/processor/runtime"
@@ -67,7 +66,6 @@ func (j *java) RunWrapper(port string) (*os.Process, error) {
 		"-jar", j.wrapperJarPath(),
 		"-handler", j.handlerName(),
 		"-port", port,
-		"-worker-id", strconv.Itoa(j.configuration.WorkerID),
 	}...)
 
 	cmd := exec.Command(args[0], args[1:]...)
