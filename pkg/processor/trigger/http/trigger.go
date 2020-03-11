@@ -97,7 +97,7 @@ func newTrigger(logger logger.Logger,
 }
 
 func (h *http) Start(checkpoint functionconfig.Checkpoint) error {
-	h.Logger.InfoWith("Starting",
+	h.Logger.InfoWith("Starting2",
 		"listenAddress", h.configuration.URL,
 		"readBufferSize", h.configuration.ReadBufferSize)
 
@@ -308,6 +308,8 @@ func (h *http) requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	h.Logger.ErrorWith("sanity")
+
 	// if the function returned an error - just return 500
 	if processError != nil {
 		var statusCode int
@@ -321,7 +323,7 @@ func (h *http) requestHandler(ctx *fasthttp.RequestCtx) {
 		default:
 			statusCode = net_http.StatusInternalServerError
 		}
-		h.Logger.InfoWith("after", "statusCode", statusCode, "rootCause", errors.RootCause(processError).Error())
+		h.Logger.ErrorWith("after", "statusCode", statusCode, "rootCause", errors.RootCause(processError).Error())
 		//// check if the user returned an error with a status code
 		//errorWithStatusCode, errorHasStatusCode := processError.(nuclio.ErrorWithStatusCode)
 		//
