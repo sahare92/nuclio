@@ -323,19 +323,9 @@ func (h *http) requestHandler(ctx *fasthttp.RequestCtx) {
 		default:
 			statusCode = net_http.StatusInternalServerError
 		}
-		h.Logger.ErrorWith("after", "statusCode", statusCode, "rootCause", errors.RootCause(processError).Error())
-		//// check if the user returned an error with a status code
-		//errorWithStatusCode, errorHasStatusCode := processError.(nuclio.ErrorWithStatusCode)
-		//
-		//// if the user didn't use one of the errors with status code, return internal error
-		//// otherwise return the status code the user wanted
-		//if !errorHasStatusCode {
-		//	statusCode = net_http.StatusInternalServerError
-		//} else {
-		//	statusCode = errorWithStatusCode.StatusCode()
-		//}
 
-		ctx.Response.SetStatusCode(404)
+		ctx.Response.SetStatusCode(statusCode)
+		ctx.Response.SetBodyString(processError.Error())
 		return
 	}
 
