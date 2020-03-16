@@ -151,6 +151,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			errorStack.Truncate(4 * Mib)
 		}
 
+		p.Logger.InfoWith("some info", "briefErrorsMessage", briefErrorsMessage, "rootcause", errors.RootCause(creationError).Error())
 		// if no brief error message was passed, set it to be root cause
 		if briefErrorsMessage == "" {
 			briefErrorsMessage = errors.RootCause(creationError).Error()
