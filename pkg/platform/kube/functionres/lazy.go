@@ -892,7 +892,9 @@ func (lc *lazyClient) createOrUpdateIngress(functionLabels labels.Set,
 		})
 
 		// a safe period to let nginx create the ingress successfully
+		lc.logger.Info("Sleeping1")
 		time.Sleep(nginxIngressUpdateGracePeriod)
+		lc.logger.Info("Done sleeping")
 
 		return resultIngress, err
 	}
@@ -928,7 +930,9 @@ func (lc *lazyClient) createOrUpdateIngress(functionLabels labels.Set,
 		resultIngress, err := lc.kubeClientSet.ExtensionsV1beta1().Ingresses(function.Namespace).Update(ingress)
 
 		// a safe period to let nginx update the ingress successfully
+		lc.logger.Info("Sleeping2")
 		time.Sleep(nginxIngressUpdateGracePeriod)
+		lc.logger.Info("Done sleeping")
 
 		return resultIngress, err
 	}
