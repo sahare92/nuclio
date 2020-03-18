@@ -248,6 +248,10 @@ func (h *http) requestHandler(ctx *fasthttp.RequestCtx) {
 		functionLogger, _ = nucliozap.NewMuxLogger(bufferLogger.Logger, h.Logger)
 	}
 
+	h.Logger.InfoWith("wat",
+		"*h.configuration.WorkerAvailabilityTimeoutMilliseconds",
+		*h.configuration.WorkerAvailabilityTimeoutMilliseconds)
+
 	response, timedOut, submitError, processError := h.AllocateWorkerAndSubmitEvent(ctx,
 		functionLogger,
 		time.Duration(*h.configuration.WorkerAvailabilityTimeoutMilliseconds)*time.Millisecond)
