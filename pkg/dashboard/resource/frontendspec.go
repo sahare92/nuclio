@@ -58,6 +58,23 @@ func (fesr *frontendSpecResource) getFrontendSpec(request *http.Request) (*restf
 		"scaleResources":          scaleResources,
 	}
 
+	one := 1
+	defaultFunctionSpec := functionconfig.Spec{
+		MinReplicas: &one,
+		MaxReplicas: &one,
+		ReadinessTimeoutSeconds: 60,
+		Triggers: map[string]functionconfig.Trigger{
+
+			// notice that this is a mapping between trigger kind and its default values
+			"http": {
+				WorkerAvailabilityTimeoutMilliseconds: 10000,
+			},
+			"cron": {
+				WorkerAvailabilityTimeoutMilliseconds: 10000,
+			},
+		},
+	}
+
 	frontendSpec := map[string]restful.Attributes{
 		"frontendSpec": { // frontendSpec is the ID of this singleton resource
 			"externalIPAddresses":            externalIPAddresses,
@@ -65,6 +82,7 @@ func (fesr *frontendSpecResource) getFrontendSpec(request *http.Request) (*restf
 			"defaultHTTPIngressHostTemplate": fesr.getPlatform().GetDefaultHTTPIngressHostTemplate(),
 			"imageNamePrefixTemplate":        fesr.getPlatform().GetImageNamePrefixTemplate(),
 			"scaleToZero":                    scaleToZeroAttribute,
+			"defaultFunctionSpec":            defaultFunctionSpec,
 		},
 	}
 
