@@ -21,7 +21,9 @@ import (
 
 	"github.com/nuclio/nuclio/pkg/dashboard"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
+	"github.com/nuclio/nuclio/pkg/platform/abstract"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
+	"github.com/nuclio/nuclio/pkg/processor/trigger"
 	"github.com/nuclio/nuclio/pkg/restful"
 
 	"github.com/nuclio/errors"
@@ -59,18 +61,19 @@ func (fesr *frontendSpecResource) getFrontendSpec(request *http.Request) (*restf
 	}
 
 	one := 1
+	defaultWorkerAvailabilityTimeoutMilliseconds := trigger.DefaultWorkerAvailabilityTimeoutMilliseconds
 	defaultFunctionSpec := functionconfig.Spec{
 		MinReplicas: &one,
 		MaxReplicas: &one,
-		ReadinessTimeoutSeconds: 60,
+		ReadinessTimeoutSeconds: abstract.DefaultReadinessTimeoutSeconds,
 		Triggers: map[string]functionconfig.Trigger{
 
 			// notice that this is a mapping between trigger kind and its default values
 			"http": {
-				WorkerAvailabilityTimeoutMilliseconds: 10000,
+				WorkerAvailabilityTimeoutMilliseconds: &defaultWorkerAvailabilityTimeoutMilliseconds,
 			},
 			"cron": {
-				WorkerAvailabilityTimeoutMilliseconds: 10000,
+				WorkerAvailabilityTimeoutMilliseconds: &defaultWorkerAvailabilityTimeoutMilliseconds,
 			},
 		},
 	}
