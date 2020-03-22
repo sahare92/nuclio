@@ -85,7 +85,7 @@ func (fesr *frontendSpecResource) getFrontendSpec(request *http.Request) (*restf
 			"defaultHTTPIngressHostTemplate": fesr.getPlatform().GetDefaultHTTPIngressHostTemplate(),
 			"imageNamePrefixTemplate":        fesr.getPlatform().GetImageNamePrefixTemplate(),
 			"scaleToZero":                    scaleToZeroAttribute,
-			"defaultFunctionSpec":            defaultFunctionSpec,
+			"defaultFunctionConfig":          functionconfig.Config{Spec: defaultFunctionSpec},
 		},
 	}
 
