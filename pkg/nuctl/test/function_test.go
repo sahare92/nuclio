@@ -495,16 +495,16 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 			"handler": "reverser:handler",
 		})
 	suite.Require().NoError(err)
-	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o json"}, nil)
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-n nuclio", "-o json"}, nil)
+
+	suite.logger.InfoWith("ok ok ok",
+		"out", suite.outputBuffer.String())
 
 	// use nuctl to delete the function when we're done
 	defer suite.ExecuteNutcl([]string{"delete", "fu", functionName}, nil)
 
 	// make sure to clean up after the test
 	defer suite.dockerClient.RemoveImage(imageName)
-
-	suite.logger.InfoWith("ok ok ok",
-		"out", suite.outputBuffer.String())
 
 	// check that the function's CET was modified to 'image'
 
