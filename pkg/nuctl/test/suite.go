@@ -136,6 +136,8 @@ func (suite *Suite) findPatternsInOutput(patternsMustExist []string, patternsMus
 	foundPatternsMustExist := make([]bool, len(patternsMustExist))
 	foundPatternsMustNotExist := make([]bool, len(patternsMustNotExist))
 
+	suite.logger.Info("test test test")
+
 	// iterate over all lines in result
 	scanner := bufio.NewScanner(&suite.outputBuffer)
 	for scanner.Scan() {

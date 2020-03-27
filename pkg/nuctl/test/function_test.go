@@ -523,7 +523,6 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 
 		return err == nil
 	})
-
 	suite.Require().NoError(err)
 
 	// check that invoke printed the value
