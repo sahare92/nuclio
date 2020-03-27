@@ -495,8 +495,21 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 			"handler": "reverser:handler",
 		})
 	suite.Require().NoError(err)
-	err = suite.ExecuteNutcl([]string{"get", "function", functionName}, nil)
 
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName}, nil)
+	suite.logger.InfoWith("ok ok ok",
+		"out", suite.outputBuffer.String())
+
+
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o text"}, nil)
+	suite.logger.InfoWith("ok ok ok",
+		"out", suite.outputBuffer.String())
+
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o json"}, nil)
+	suite.logger.InfoWith("ok ok ok",
+		"out", suite.outputBuffer.String())
+
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o wide"}, nil)
 	suite.logger.InfoWith("ok ok ok",
 		"out", suite.outputBuffer.String())
 
