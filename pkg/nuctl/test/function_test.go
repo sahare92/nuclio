@@ -497,11 +497,12 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 	suite.Require().NoError(err)
 	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o json"}, nil)
 
+	// use nuctl to delete the function when we're done
+	defer suite.ExecuteNutcl([]string{"delete", "fu", functionName}, nil)
+
 	// make sure to clean up after the test
 	defer suite.dockerClient.RemoveImage(imageName)
 
-	// use nuctl to delete the function when we're done
-	defer suite.ExecuteNutcl([]string{"delete", "fu", functionName}, nil)
 	suite.logger.InfoWith("ok ok ok",
 		"out", suite.outputBuffer.String())
 
