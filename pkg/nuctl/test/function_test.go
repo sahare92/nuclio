@@ -506,7 +506,10 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 	// check that the function's CET was modified to 'image'
 	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o yaml"}, nil)
 	suite.Require().NoError(err)
-	suite.Require().Contains(suite.outputBuffer.String(), "codeEntryType: image")
+	a := suite.outputBuffer.String()
+	suite.logger.InfoWith("printing code entry mann",
+		"outputBuffer", a)
+	suite.Require().Contains(a, "codeEntryType: image")
 
 	// try a few times to invoke, until it succeeds
 	err = common.RetryUntilSuccessful(60*time.Second, 1*time.Second, func() bool {
