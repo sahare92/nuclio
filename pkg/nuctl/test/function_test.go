@@ -501,15 +501,35 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 		"out", suite.outputBuffer.String())
 
 
-	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o text"}, nil)
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName},
+		map[string]string{
+			"output": "text",
+		})
 	suite.logger.InfoWith("ok ok ok",
 		"out", suite.outputBuffer.String())
 
-	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o json"}, nil)
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName},
+		map[string]string{
+			"output": "json",
+		})
 	suite.logger.InfoWith("ok ok ok",
 		"out", suite.outputBuffer.String())
 
-	err = suite.ExecuteNutcl([]string{"get", "function", functionName, "-o wide"}, nil)
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName},
+		map[string]string{
+			"output": "yaml",
+		})
+
+	suite.logger.InfoWith("ok ok ok",
+		"out", suite.outputBuffer.String())
+
+	suite.logger.InfoWith("ok ok ok2 test",
+		"out", suite.outputBuffer.String())
+	err = suite.ExecuteNutcl([]string{"get", "function", functionName},
+		map[string]string{
+			"output": "wide",
+		})
+
 	suite.logger.InfoWith("ok ok ok",
 		"out", suite.outputBuffer.String())
 
