@@ -235,6 +235,7 @@ func (lc *lazyClient) CreateOrUpdate(ctx context.Context, function *nuclioio.Nuc
 		return nil, errors.Wrap(err, "Failed to delete existing cron jobs")
 	}
 
+	lc.logger.InfoWith("platform kind", "kind", platformConfig.Kind)
 	// if platform kind is "kube" - create k8s cron jobs instead of creating the processor's cron trigger
 	// the k8s cron jobs will invoke the function's default http trigger on their schedule
 	// this will enable using the scale to zero functionality of http triggers for cron triggers
