@@ -58,7 +58,14 @@ func (cjpd *cronJobStalePodsDeleter) startStaleCronJobPodsDeletionLoop() error {
 		// sleep until next deletion time interval
 		time.Sleep(*cjpd.deletionInterval)
 
-		err := cjpd.controller.kubeClientSet.CoreV1().Pods(cjpd.controller.namespace).DeleteCollection(&meta_v1.DeleteOptions{},
+		res, err := cjpd.controller.kubeClientSet.CoreV1().Pods(cjpd.controller.namespace).List(meta_v1.ListOptions{
+				LabelSelector: "nuclio.io/function-cron-job-pod=true",
+				FieldSelector: strings.Join(fieldSelectors, ","),
+			})
+
+		cjpd.logger.WarnWith("Result of filtering", "res", res, "fieldSelectorsJoined", strings.Join(fieldSelectors, ","))
+
+		err = cjpd.controller.kubeClientSet.CoreV1().Pods(cjpd.controller.namespace).DeleteCollection(&meta_v1.DeleteOptions{},
 			meta_v1.ListOptions{
 				LabelSelector: "nuclio.io/function-cron-job-pod=true",
 				FieldSelector: strings.Join(fieldSelectors, ","),
