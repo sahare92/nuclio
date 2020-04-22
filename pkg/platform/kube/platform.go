@@ -164,7 +164,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		}
 
 		createFunctionOptions.Logger.WarnWith("Create function failed, setting function status",
-			"errorStack", errorStack.String())
+			"errorStack", errorStack.String(), "clearCallStack", clearCallStack)
 
 		defaultHTTPPort := 0
 		if existingFunctionInstance != nil {
