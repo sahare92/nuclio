@@ -17,6 +17,8 @@ limitations under the License.
 package app
 
 import (
+	"context"
+	"github.com/nuclio/nuclio/pkg/common/ingress"
 	"strconv"
 	"time"
 
@@ -133,6 +135,37 @@ func createController(kubeconfigPath string,
 	functionresClient, err := functionres.NewLazyClient(rootLogger, kubeClientSet, nuclioClientSet)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create function deployment client")
+	}
+
+	systemSpec := &ingress.SystemSpec{
+		IngressTLSSecret: ingressTLSSecret,
+		IguazioSigninURL: iguazioSigninURL,
+		IguazioAuthURL: iguazioAuthURL,
+	}
+
+	spec := ingress.Spec{
+		Name: "test-ingress-creation",
+		Namespace: namespace,
+		Host: "simpleff.default.default-tenant.app.dev76.lab.iguazeng.com",
+		ServiceName: "nuclio-simplefunc",
+		ServicePort: 8080,
+
+	}
+	spec.AllowedProtocols = []string{"https", "http"}
+
+	// add nginx specific annotations
+	annotations := map[string]string{
+		"kubernetes.io/ingress.class" : "nginx",
+	}
+	spec.Annotations = annotations
+
+	ing, sec, err := ingress.GenerateIngressResource(context.Background(), spec, systemSpec)
+	if _, err := kubeClientSet.CoreV1().Secrets(namespace).Create(sec); err != nil {
+		return nil, errors.Wrap(err, "Failed to create the secret")
+	}
+
+	if _, err := kubeClientSet.ExtensionsV1beta1().Ingresses(namespace).Create(ing); err != nil {
+		return nil, errors.Wrap(err, "Failed to create the ingress")
 	}
 
 	newController, err := controller.NewController(rootLogger,
