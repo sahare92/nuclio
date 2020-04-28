@@ -17,6 +17,7 @@ limitations under the License.
 package resource
 
 import (
+	"os"
 	"net/http"
 
 	"github.com/nuclio/nuclio/pkg/dashboard"
@@ -46,11 +47,12 @@ func (fesr *frontendSpecResource) getFrontendSpec(request *http.Request) (*restf
 		fesr.Logger.InfoWith("test80  found dashboard server")
 		platformConfiguration := dashboardServer.GetPlatformConfiguration()
 		if platformConfiguration != nil {
-			fesr.Logger.InfoWith("test80  platform confing is not nil")
+			fesr.Logger.InfoWith("test80  platform confing is not nil", "platformKind", platformKind)
 			platformKind = platformConfiguration.Kind
 		}
 	}
 
+	fesr.Logger.InfoWith("test80 detected platform kind", "kind", fesr.detectPlatformKind())
 	scaleToZeroConfiguration, err := fesr.getPlatform().GetScaleToZeroConfiguration()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed getting scale to zero configuration")
@@ -128,6 +130,14 @@ func (fesr *frontendSpecResource) GetCustomRoutes() ([]restful.CustomRoute, erro
 			RouteFunc: fesr.getFrontendSpec,
 		},
 	}, nil
+}
+
+func (fesr *frontendSpecResource) detectPlatformKind() string {
+	if len(os.Getenv("KUBERNETES_SERVICE_HOST")) != 0 && len(os.Getenv("KUBERNETES_SERVICE_PORT")) != 0 {
+		return "kube"
+	}
+
+	return "local"
 }
 
 // register the resource
