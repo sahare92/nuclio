@@ -41,9 +41,12 @@ func (fesr *frontendSpecResource) getFrontendSpec(request *http.Request) (*restf
 
 	// try to get platform kind
 	platformKind := ""
+	fesr.Logger.InfoWith("test80 before all")
 	if dashboardServer, ok := fesr.resource.GetServer().(*dashboard.Server); ok {
+		fesr.Logger.InfoWith("test80  found dashboard server")
 		platformConfiguration := dashboardServer.GetPlatformConfiguration()
 		if platformConfiguration != nil {
+			fesr.Logger.InfoWith("test80  platform confing is not nil")
 			platformKind = platformConfiguration.Kind
 		}
 	}
