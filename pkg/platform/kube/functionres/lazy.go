@@ -1498,6 +1498,9 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			eventBody = string(eventBodyAsJSON)
 		}
 
+		// TODO: remove this!
+		wgetCommand = "echo"
+
 		wgetCommand = fmt.Sprintf("echo %s > %s && %s %s",
 			attributes.Event.Body,
 			eventBodyFilePath,
