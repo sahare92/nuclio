@@ -1483,14 +1483,14 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	functionAddress := fmt.Sprintf("%s:%d", host, port)
 
 	// generate the whole wget command to be run by the CronJob to invoke the function
-	wgetCommand := fmt.Sprintf("wget %s %s", headersAsWgetArg, functionAddress)
+	wgetCommand := fmt.Sprintf("curl %s %s", headersAsWgetArg, functionAddress)
 
 	if attributes.Event.Body != "" {
 		eventBody := attributes.Event.Body
 
 		// if a body exists - dump it into a file, and pass this file as argument (done to support JSON body)
 		eventBodyFilePath := "/tmp/eventbody.out"
-		eventBodyWgetArg := fmt.Sprintf("--body-file %s", eventBodyFilePath)
+		eventBodyWgetArg := fmt.Sprintf("--data '@%s'", eventBodyFilePath)
 
 		// if body is a valid JSON parse it accordingly
 		eventBodyAsJSON, err := json.Marshal(eventBody)
@@ -1515,7 +1515,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 					Containers: []v1.Container{
 						{
 							Name:  "function-invocator",
-							Image: common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_CRON_TRIGGER_CRON_JOB_IMAGE_NAME", "busybox:latest"),
+							Image: common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_CRON_TRIGGER_CRON_JOB_IMAGE_NAME", "curlimages/curl:7.70.0"),
 							Args:  []string{"/bin/sh", "-c", wgetCommand},
 							ImagePullPolicy: v1.PullPolicy(common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_CRON_TRIGGER_CRON_JOB_IMAGE_PULL_POLICY", "IfNotPresent")),
 						},
