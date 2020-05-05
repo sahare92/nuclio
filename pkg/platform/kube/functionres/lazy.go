@@ -1505,6 +1505,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			eventBodyCurlArg)
 	}
 
+	backoffLimit := int32(0)
 	spec.JobTemplate = batch_v1beta1.JobTemplateSpec{
 		Spec: batch_v1.JobSpec{
 			Template: v1.PodTemplateSpec{
@@ -1520,6 +1521,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 					RestartPolicy: v1.RestartPolicyNever,
 				},
 			},
+			BackoffLimit: &backoffLimit,
 		},
 	}
 
