@@ -1474,11 +1474,11 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			return nil, errors.New(fmt.Sprintf("Unexpected header value type (expected string). header key: %s", headerKey))
 		}
 
-		headersAsWgetArg = fmt.Sprintf("%s --header \"%s: %s\"", headersAsWgetArg, headerKey, headerValueAsString)
+		headersAsWgetArg = fmt.Sprintf("%s --header '%s:%s'", headersAsWgetArg, headerKey, headerValueAsString)
 	}
 
 	// add default header
-	headersAsWgetArg = fmt.Sprintf("%s --header \"%s: %s\"", headersAsWgetArg, "x-nuclio-invoke-trigger", "cron")
+	headersAsWgetArg = fmt.Sprintf("%s --header '%s:%s'", headersAsWgetArg, "x-nuclio-invoke-trigger", "cron")
 
 	// get the function http trigger address from the service
 	functionService, err := resources.Service()
