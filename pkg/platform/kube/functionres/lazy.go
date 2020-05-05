@@ -1434,6 +1434,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	resources Resources,
 	cronTrigger functionconfig.Trigger) (*batch_v1beta1.CronJobSpec, error) {
 	var err error
+	var hasJSONBody bool
 
 	spec := batch_v1beta1.CronJobSpec{}
 
@@ -1460,12 +1461,6 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 		}
 	}
 
-	// generate a string to be sent as the request body argument to wget
-	eventBodyAsWgetArg := ""
-	if attributes.Event.Body != "" {
-		eventBodyAsWgetArg = fmt.Sprintf("--post-data '%s'", attributes.Event.Body)
-	}
-
 	// generate a string containing all of the headers with --header flag as prefix, to be used by wget later
 	headersAsWgetArg := ""
 	for headerKey, headerValue := range attributes.Event.Headers {
@@ -1474,11 +1469,32 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			return nil, errors.New(fmt.Sprintf("Unexpected header value type (expected string). header key: %s", headerKey))
 		}
 
+		if headerKey == "Content-Type" && headerValue == "application/json" {
+			hasJSONBody = true
+		}
+
 		headersAsWgetArg = fmt.Sprintf("%s --header '%s:%s'", headersAsWgetArg, headerKey, headerValueAsString)
 	}
 
 	// add default header
 	headersAsWgetArg = fmt.Sprintf("%s --header '%s:%s'", headersAsWgetArg, "x-nuclio-invoke-trigger", "cron")
+
+	// generate a string to be sent as the request body argument to wget
+	eventBodyAsWgetArg := ""
+	if attributes.Event.Body != "" {
+		eventBody := attributes.Event.Body
+
+		if hasJSONBody {
+			marshaledEventBody, err := json.Marshal(attributes.Event.Body)
+			if err != nil {
+				lc.logger.WarnWith("Failed to parse cron trigger event body as JSON. Continuing as if it was a string")
+			} else {
+				eventBody = string(marshaledEventBody)
+			}
+		}
+
+		eventBodyAsWgetArg = fmt.Sprintf("--post-data '%s'", eventBody)
+	}
 
 	// get the function http trigger address from the service
 	functionService, err := resources.Service()
