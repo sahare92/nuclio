@@ -1486,10 +1486,17 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	wgetCommand := fmt.Sprintf("wget %s %s", headersAsWgetArg, functionAddress)
 
 	if attributes.Event.Body != "" {
+		eventBody := attributes.Event.Body
 
 		// if a body exists - dump it into a file, and pass this file as argument (done to support JSON body)
 		eventBodyFilePath := "tmp/eventbody.out"
 		eventBodyWgetArg := fmt.Sprintf("--post-file %s", eventBodyFilePath)
+
+		// if body is a valid JSON parse it accordingly
+		eventBodyAsJSON, err := json.Marshal(eventBody)
+		if err == nil {
+			eventBody = string(eventBodyAsJSON)
+		}
 
 		wgetCommand = fmt.Sprintf("echo %s > %s && %s %s",
 			attributes.Event.Body,
