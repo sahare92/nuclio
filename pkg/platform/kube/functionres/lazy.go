@@ -1434,7 +1434,6 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	resources Resources,
 	cronTrigger functionconfig.Trigger) (*batch_v1beta1.CronJobSpec, error) {
 	var err error
-	var hasJSONBody bool
 
 	spec := batch_v1beta1.CronJobSpec{}
 
@@ -1469,32 +1468,11 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			return nil, errors.New(fmt.Sprintf("Unexpected header value type (expected string). header key: %s", headerKey))
 		}
 
-		if headerKey == "Content-Type" && headerValue == "application/json" {
-			hasJSONBody = true
-		}
-
 		headersAsWgetArg = fmt.Sprintf("%s --header '%s:%s'", headersAsWgetArg, headerKey, headerValueAsString)
 	}
 
 	// add default header
 	headersAsWgetArg = fmt.Sprintf("%s --header '%s:%s'", headersAsWgetArg, "x-nuclio-invoke-trigger", "cron")
-
-	// generate a string to be sent as the request body argument to wget
-	eventBodyAsWgetArg := ""
-	if attributes.Event.Body != "" {
-		eventBody := attributes.Event.Body
-
-		if hasJSONBody {
-			marshaledEventBody, err := json.Marshal(attributes.Event.Body)
-			if err != nil {
-				lc.logger.WarnWith("Failed to parse cron trigger event body as JSON. Continuing as if it was a string")
-			} else {
-				eventBody = string(marshaledEventBody)
-			}
-		}
-
-		eventBodyAsWgetArg = fmt.Sprintf("--post-data '%s'", eventBody)
-	}
 
 	// get the function http trigger address from the service
 	functionService, err := resources.Service()
@@ -1505,7 +1483,20 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	functionAddress := fmt.Sprintf("%s:%d", host, port)
 
 	// generate the whole wget command to be run by the CronJob to invoke the function
-	wgetCommand := fmt.Sprintf("wget %s %s %s", eventBodyAsWgetArg, headersAsWgetArg, functionAddress)
+	wgetCommand := fmt.Sprintf("wget %s %s", headersAsWgetArg, functionAddress)
+
+	if attributes.Event.Body != "" {
+
+		// if a body exists - dump it into a file, and pass this file as argument (done to support JSON body)
+		eventBodyFilePath := "tmp/eventbody.out"
+		eventBodyWgetArg := fmt.Sprintf("--post-file %s", eventBodyFilePath)
+
+		wgetCommand = fmt.Sprintf("echo %s > %s && %s %s",
+			attributes.Event.Body,
+			eventBodyFilePath,
+			wgetCommand,
+			eventBodyWgetArg)
+	}
 
 	spec.JobTemplate = batch_v1beta1.JobTemplateSpec{
 		Spec: batch_v1.JobSpec{
