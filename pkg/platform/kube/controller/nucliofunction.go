@@ -233,8 +233,8 @@ func (fo *functionOperator) setFunctionError(function *nuclioio.NuclioFunction, 
 	fo.logger.WarnWith("Setting function error", "name", function.Name, "err", err)
 
 	if fo.setFunctionStatus(function, &functionconfig.Status{
-		State:   functionconfig.FunctionStateError,
-		Message: errors.GetErrorStackString(err, 10),
+		State: functionconfig.FunctionStateError,
+		Logs:  []map[string]interface{}{{"err": errors.RootCause(err)}},
 	}) != nil {
 		fo.logger.Warn("Failed to update function on error")
 	}
