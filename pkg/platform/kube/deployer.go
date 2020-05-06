@@ -96,6 +96,8 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 			NuclioFunctions(functionInstance.Namespace).
 			Update(functionInstance)
 
+		updateFailureReason := err.(apierrors.APIStatus).Status().Reason
+		d.logger.WarnWith("Update failed with reason", "updateFailureReason", updateFailureReason)
 		if apierrors.IsResourceExpired(err) {
 			d.logger.InfoWith("Function update failed because function resource expired. Retrying",
 				"functionName", functionInstance.Name)
