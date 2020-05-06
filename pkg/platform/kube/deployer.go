@@ -58,6 +58,7 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 	functionStatus *functionconfig.Status) (*nuclioio.NuclioFunction, error) {
 
 	var err error
+	var newFunctionInstance *nuclioio.NuclioFunction
 
 	// boolean which indicates whether the function exists or not
 	// the function will be created if it doesn't exit, otherwise will updated
@@ -88,11 +89,11 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 
 	// if function didn't exist, create. otherwise update
 	if !functionExists {
-		functionInstance, err = nuclioClientSet.NuclioV1beta1().
+		newFunctionInstance, err = nuclioClientSet.NuclioV1beta1().
 			NuclioFunctions(functionInstance.Namespace).
 			Create(functionInstance)
 	} else {
-		functionInstance, err = nuclioClientSet.NuclioV1beta1().
+		newFunctionInstance, err = nuclioClientSet.NuclioV1beta1().
 			NuclioFunctions(functionInstance.Namespace).
 			Update(functionInstance)
 
@@ -101,18 +102,22 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 			apierrors.IsConflict(err) &&
 			strings.Contains(err.Error(), "the object has been modified"){
 
-			d.logger.InfoWith("Function update failed because the function resource version has expired. Retrying",
+			d.logger.InfoWith("Function update failed because the function resourceVersion has expired. Retrying",
 				"functionName", functionInstance.Name)
 
+			// get an updated function instance
 			updatedFunctionInstance, err := nuclioClientSet.NuclioV1beta1().
-				NuclioFunctions(createFunctionOptions.FunctionConfig.Meta.Namespace).
-				Get(createFunctionOptions.FunctionConfig.Meta.Name, meta_v1.GetOptions{})
+				NuclioFunctions(functionInstance.Namespace).
+				Get(functionInstance.Name, meta_v1.GetOptions{})
 			if err != nil {
 				return nil, errors.Wrap(err, "Failed to get updated function on resourceVersion update")
 			}
 
+			// update the resource version
+			functionInstance.ResourceVersion = updatedFunctionInstance.ResourceVersion
+
 			// retry with the updated function instance
-			return d.createOrUpdateFunction(updatedFunctionInstance, createFunctionOptions, functionStatus)
+			return d.createOrUpdateFunction(functionInstance, createFunctionOptions, functionStatus)
 		}
 	}
 
@@ -120,7 +125,7 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 		return nil, errors.Wrap(err, "Failed to create/update function")
 	}
 
-	return functionInstance, nil
+	return newFunctionInstance, nil
 }
 
 func (d *deployer) populateFunction(functionConfig *functionconfig.Config,
