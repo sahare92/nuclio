@@ -111,8 +111,13 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 				return nil, errors.Wrap(err, "Failed to get updated function on resourceVersion update")
 			}
 
+			d.logger.InfoWith("function instances log",
+				"updatedFunctionInstance", updatedFunctionInstance,
+				"oldFunctionInstance", functionInstance)
+
 			// update function's resourceVersion
 			functionInstance.ResourceVersion = updatedFunctionInstance.ResourceVersion
+			functionInstance.Name = updatedFunctionInstance.Name
 
 			// retry with the updated functionInstance
 			return d.createOrUpdateFunction(functionInstance, createFunctionOptions, functionStatus)
