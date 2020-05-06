@@ -141,6 +141,7 @@ func (fo *functionOperator) CreateOrUpdate(ctx context.Context, object runtime.O
 
 	// wait until the function resources are ready
 	if err = fo.functionresClient.WaitAvailable(waitContext, function.Namespace, function.Name); err != nil {
+		fo.logger.DebugWith("finished waiting for available", "message", function.Status.Message)
 		return fo.setFunctionError(function, errors.Wrap(err,
 			"Failed to wait for function resources to be available"))
 	}
@@ -233,8 +234,8 @@ func (fo *functionOperator) setFunctionError(function *nuclioio.NuclioFunction, 
 	fo.logger.WarnWith("Setting function error", "name", function.Name, "err", err)
 
 	if fo.setFunctionStatus(function, &functionconfig.Status{
-		State: functionconfig.FunctionStateError,
-		Logs:  []map[string]interface{}{{"err": errors.RootCause(err)}},
+		State:   functionconfig.FunctionStateError,
+		Message: errors.GetErrorStackString(err, 10),
 	}) != nil {
 		fo.logger.Warn("Failed to update function on error")
 	}
