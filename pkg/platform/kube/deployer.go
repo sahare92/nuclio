@@ -105,22 +105,14 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 				"functionName", functionInstance.Name)
 
 			updatedFunctionInstance, err := nuclioClientSet.NuclioV1beta1().
-				NuclioFunctions(functionInstance.Namespace).
-				Get(functionInstance.Name, meta_v1.GetOptions{})
+				NuclioFunctions(createFunctionOptions.FunctionConfig.Meta.Namespace).
+				Get(createFunctionOptions.FunctionConfig.Meta.Name, meta_v1.GetOptions{})
 			if err != nil {
 				return nil, errors.Wrap(err, "Failed to get updated function on resourceVersion update")
 			}
 
-			d.logger.InfoWith("function instances log",
-				"updatedFunctionInstance", updatedFunctionInstance,
-				"oldFunctionInstance", functionInstance)
-
-			// update function's resourceVersion
-			functionInstance.ResourceVersion = updatedFunctionInstance.ResourceVersion
-			functionInstance.Name = updatedFunctionInstance.Name
-
-			// retry with the updated functionInstance
-			return d.createOrUpdateFunction(functionInstance, createFunctionOptions, functionStatus)
+			// retry with the updated function instance
+			return d.createOrUpdateFunction(updatedFunctionInstance, createFunctionOptions, functionStatus)
 		}
 	}
 
