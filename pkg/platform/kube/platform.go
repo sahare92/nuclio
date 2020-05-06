@@ -154,6 +154,8 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			errorStack.Truncate(4 * Mib)
 		}
 
+		p.Logger.DebugWith("logg 2", "briefErrorsMessage", briefErrorsMessage)
+
 		// when no brief error message was passed - infer it from the creation error
 		if briefErrorsMessage == "" {
 			rootCause := errors.RootCause(creationError)
@@ -168,9 +170,13 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			}
 		}
 
+		p.Logger.DebugWith("logg 3", "briefErrorsMessage", briefErrorsMessage)
+
 		if clearCallStack {
 			briefErrorsMessage = p.clearCallStack(briefErrorsMessage)
 		}
+
+		p.Logger.DebugWith("logg 4", "briefErrorsMessage", briefErrorsMessage)
 
 		// low severity to not over log in the warning
 		createFunctionOptions.Logger.DebugWith("Function creation failed, brief error message extracted",

@@ -263,7 +263,7 @@ func (d *deployer) getFunctionPodLogsAndEvents(namespace string, name string) (s
 			// close the stream
 			logsRequest.Close() // nolint: errcheck
 		}
-
+		d.logger.DebugWith("logg 0", "briefErrorsMessage", briefErrorsMessage)
 		podWarningEvents, err := d.getFunctionPodWarningEvents(namespace, pod.Name)
 		if err != nil {
 			podLogsMessage += "Failed to get pod warning events: " + err.Error() + "\n"
@@ -273,6 +273,7 @@ func (d *deployer) getFunctionPodLogsAndEvents(namespace string, name string) (s
 			podLogsMessage += "\n* Warning events:\n" + podWarningEvents
 			briefErrorsMessage += podWarningEvents
 		}
+		d.logger.DebugWith("logg 1", "briefErrorsMessage", briefErrorsMessage)
 	}
 
 	return podLogsMessage, briefErrorsMessage
