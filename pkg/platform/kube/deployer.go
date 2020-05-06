@@ -104,7 +104,15 @@ func (d *deployer) createOrUpdateFunction(functionInstance *nuclioio.NuclioFunct
 			d.logger.InfoWith("Function update failed because the function resource version has expired. Retrying",
 				"functionName", functionInstance.Name)
 
-			functionInstance.ResourceVersion = ""
+			updatedFunctionInstance, err := nuclioClientSet.NuclioV1beta1().
+				NuclioFunctions(functionInstance.Namespace).
+				Get(functionInstance.Name, meta_v1.GetOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "Failed to get updated function on resourceVersion update")
+			}
+
+			// update function's resourceVersion
+			functionInstance.ResourceVersion = updatedFunctionInstance.ResourceVersion
 
 			// retry with the updated functionInstance
 			return d.createOrUpdateFunction(functionInstance, createFunctionOptions, functionStatus)
