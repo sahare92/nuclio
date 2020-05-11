@@ -120,6 +120,54 @@ func (suite *functionDeployTestSuite) TestDeploy() {
 	suite.Require().Contains(suite.outputBuffer.String(), "+gnirts siht esrever-")
 }
 
+func (suite *functionDeployTestSuite) TestDeployCronTriggersK8s() {
+
+	// TODO: Remove this once creating a special test suite for k8s
+	if suite.origPlatformType != "kube" {
+		suite.logger.InfoWith("Not on kube platform. returning", "platformType", suite.origPlatformType)
+		return
+	}
+	suite.logger.InfoWith("On kube platform. continuing", "platformType", suite.origPlatformType)
+
+	uniqueSuffix := "-" + xid.New().String()
+	functionName := "reverser" + uniqueSuffix
+	imageName := "nuclio/deploy-test" + uniqueSuffix
+
+	namedArgs := map[string]string{
+		"path":    path.Join(suite.GetFunctionsDir(), "common", "reverser", "golang"),
+		"image":   imageName,
+		"runtime": "golang",
+		"handler": "main:Reverse",
+		"triggers": `{"crontrig":{"kind":"cron","attributes":{"interval":"10s"}}}`,
+	}
+
+	err := suite.ExecuteNuctl([]string{"deploy", functionName, "--verbose", "--no-pull"}, namedArgs)
+
+	suite.Require().NoError(err)
+
+	// make sure to clean up after the test
+	defer suite.dockerClient.RemoveImage(imageName)
+
+	// use nutctl to delete the function when we're done
+	defer suite.ExecuteNuctl([]string{"delete", "fu", functionName}, nil)
+
+	// try a few times to invoke, until it succeeds
+	err = suite.ExecuteNuctlAndWait([]string{"invoke", functionName},
+		map[string]string{
+			"method": "POST",
+			"body":   "-reverse this string+",
+			"via":    "external-ip",
+		},
+		false)
+	suite.Require().NoError(err)
+
+	// make sure reverser worked
+	suite.Require().Contains(suite.outputBuffer.String(), "+gnirts siht esrever-")
+	suite.logger.Info("Sleeping after testttt")
+	time.Sleep(10000 * time.Second)
+	suite.logger.Info("finished sleeping after testttt")
+}
+
 func (suite *functionDeployTestSuite) TestDeployWithMetadata() {
 	uniqueSuffix := "-" + xid.New().String()
 	functionName := "envprinter" + uniqueSuffix
