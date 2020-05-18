@@ -279,6 +279,7 @@ func (k *kafka) eventSubmitter(claim sarama.ConsumerGroupClaim, submittedEventCh
 	// while there are events to submit, submit them to the given worker
 	for submittedEvent := range submittedEventChan {
 
+		k.Logger.InfoWith("submitting event", "headers", submittedEvent.event.GetHeaders(), "unparsedHeaders", submittedEvent.event.kafkaMessage.Headers)
 		// submit the event to the worker
 		_, processErr := k.SubmitEventToWorker(nil, submittedEvent.worker, &submittedEvent.event) // nolint: errcheck
 		if processErr != nil {
