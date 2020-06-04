@@ -223,6 +223,9 @@ func (im *IngressManager) getBasicAuthIngressAnnotationsAndSecret(ctx context.Co
 		return nil, nil, errors.Wrap(err, "Failed to generate htpasswd contents")
 	}
 
+	im.logger.InfoWith("htpasswdcontens",
+		"htpasswdContents", string(htpasswdContents))
+
 	ingressAnnotations := map[string]string{
 		"nginx.ingress.kubernetes.io/auth-type":   "basic",
 		"nginx.ingress.kubernetes.io/auth-secret": authSecretName,
@@ -247,8 +250,13 @@ func (im *IngressManager) GenerateHtpasswdContents(ctx context.Context,
 	username string,
 	password string) ([]byte, error) {
 
+	with := fmt.Sprintf("echo %s | htpasswd -n -i %s", common.Quote(password), common.Quote(username))
+	without := fmt.Sprintf("echo %s | htpasswd -n -i %s", common.Quote(password), username)
 	runResult, err := im.cmdRunner.Run(nil,
-		fmt.Sprintf("echo %s | htpasswd -n -i %s", common.Quote(password), common.Quote(username)))
+		fmt.Sprintf("echo %s | htpasswd -n -i %s", common.Quote(password), username))
+	im.logger.InfoWith("htpasswdman",
+		"with", with,
+		"without", without)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to run htpasswd command")
 	}
