@@ -1493,7 +1493,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 		Schedule          string
 		Interval          string
 		ConcurrencyPolicy string
-		JobBackoffLimit   int32
+		JobBackoffLimit   string
 		Event             cron.Event
 	}
 
@@ -1555,10 +1555,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	}
 
 	// get cron job retries until failing a job (default=2)
-	jobBackoffLimit := attributes.JobBackoffLimit
-	if jobBackoffLimit == 0 {
-		jobBackoffLimit = 2
-	}
+	jobBackoffLimit := lc.resolveBackoffLimit(attributes.JobBackoffLimit)
 
 	spec.JobTemplate = batchv1beta1.JobTemplateSpec{
 		Spec: batchv1.JobSpec{
@@ -1589,6 +1586,23 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	spec.FailedJobsHistoryLimit = &one
 
 	return &spec, nil
+}
+
+func (lc *lazyClient) resolveBackoffLimit(backoffLimit string) int32 {
+	jobBackoffLimit := int32(2)
+
+	if backoffLimit != "" {
+		parsedCronJobJobRetries, err := strconv.Atoi(backoffLimit)
+		if err != nil {
+			lc.logger.WarnWith("Failed to resolve backoff limit. Returning the default",
+				"backoffLimit", backoffLimit,
+				"defaultBackoffLimit", jobBackoffLimit)
+		} else {
+			jobBackoffLimit = int32(parsedCronJobJobRetries)
+		}
+	}
+
+	return jobBackoffLimit
 }
 
 func (lc *lazyClient) normalizeCronTriggerScheduleInput(schedule string) (string, error) {
