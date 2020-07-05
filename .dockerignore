@@ -11,5 +11,6 @@ pkg/dashboard/ui/dist
 
 **/Dockerfile
 **/Dockerfile.alpine
+**/Dockerfile.handler-pypy
 
 pkg/processor/runtime/python/**/venv

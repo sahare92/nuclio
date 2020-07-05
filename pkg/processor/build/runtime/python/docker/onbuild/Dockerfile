@@ -14,6 +14,7 @@
 
 ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
+ARG NUCLIO_DOCKER_REPO=quay.io/nuclio
 
 # Supplies python 2 wheels
 FROM python:2 as python2-builder
@@ -44,7 +45,7 @@ RUN pip download \
         -r /requirements/python3_6.txt
 
 # Supplies processor
-FROM quay.io/nuclio/processor:${NUCLIO_LABEL}-${NUCLIO_ARCH} as processor
+FROM ${NUCLIO_DOCKER_REPO}/processor:${NUCLIO_LABEL}-${NUCLIO_ARCH} as processor
 
 # Doesn't do anything but hold processor binary and all Python code required to run the handler
 FROM scratch
