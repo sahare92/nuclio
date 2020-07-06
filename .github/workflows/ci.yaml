@@ -103,7 +103,7 @@ jobs:
       with:
         login-server: ${{ env.REPO }}
         username: ${{ env.REPO_USER }}
-        password: ${{ github.token }}
+        password: ${{ secrets.CI_PUSH_IMAGES }}
 
     - name: Build
       run: make docker-images
@@ -144,7 +144,7 @@ jobs:
       with:
         login-server: ${{ env.REPO }}
         username: ${{ env.REPO_USER }}
-        password: ${{ github.token }}
+        password: ${{ secrets.CI_PUSH_IMAGES }}
 
     - name: Pull
       run: make pull-docker-images
@@ -194,7 +194,7 @@ jobs:
       with:
         login-server: ${{ env.REPO }}
         username: ${{ env.REPO_USER }}
-        password: ${{ github.token }}
+        password: ${{ secrets.CI_PUSH_IMAGES }}
 
     - name: Pull
       run: make pull-docker-images
