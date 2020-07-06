@@ -2,6 +2,7 @@
 
 The day-to-day development is managed in the [GitHub issues](https://github.com/nuclio/nuclio/issues), but the following should serve as a high-level overview of the current Nuclio features and future development plans.
 
+
 ## Current features
 
 - Triggers
