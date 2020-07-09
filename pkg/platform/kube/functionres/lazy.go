@@ -1533,7 +1533,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 
 	// generate the curl command to be run by the CronJob to invoke the function
 	// retry to invoke the function for 5 seconds (in case of connection-refused error etc..)
-	curlCommand := fmt.Sprintf("curl --silent %s %s --retry 5 --max-time 2 --retry-delay 1 --retry-max-time 5 --retry-connrefused",
+	curlCommand := fmt.Sprintf("curl --silent %s %s --retry 5 --max-time 2 --retry-delay 1 --retry-max-time 5 --retry-all-errors",
 		headersAsCurlArg,
 		functionAddress)
 
@@ -1571,7 +1571,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 					Containers: []v1.Container{
 						{
 							Name:            "function-invocator",
-							Image:           common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_CRON_TRIGGER_CRON_JOB_IMAGE_NAME", "appropriate/curl:latest"),
+							Image:           "curlimages/curl:latest",
 							Args:            []string{"/bin/sh", "-c", curlCommand},
 							ImagePullPolicy: v1.PullPolicy(common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_CRON_TRIGGER_CRON_JOB_IMAGE_PULL_POLICY", "IfNotPresent")),
 						},
