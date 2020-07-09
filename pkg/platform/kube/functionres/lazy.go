@@ -1591,10 +1591,6 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	spec.SuccessfulJobsHistoryLimit = &one
 	spec.FailedJobsHistoryLimit = &one
 
-	// if missed the starting deadline by 10 seconds - it means the system is overloaded, skip this cron cycle
-	startingDeadlineSeconds := int64(10)
-	spec.StartingDeadlineSeconds = &startingDeadlineSeconds
-
 	return &spec, nil
 }
 
