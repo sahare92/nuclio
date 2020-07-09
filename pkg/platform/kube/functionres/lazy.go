@@ -1557,10 +1557,10 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			eventBodyCurlArg)
 	}
 
-	// get cron job retries until failing a job (default=2)
+	// get cron job retries until failing a job (default=1)
 	jobBackoffLimit := attributes.JobBackoffLimit
 	if jobBackoffLimit == 0 {
-		jobBackoffLimit = 2
+		jobBackoffLimit = 1
 	}
 
 	spec.JobTemplate = batchv1beta1.JobTemplateSpec{
@@ -1590,6 +1590,10 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	// set default history limit (no need for more than one - makes kube jobs api clearer)
 	spec.SuccessfulJobsHistoryLimit = &one
 	spec.FailedJobsHistoryLimit = &one
+
+	// if missed the starting deadline by 10 seconds - it means the system is overloaded, skip this cron cycle
+	startingDeadlineSeconds := int64(10)
+	spec.StartingDeadlineSeconds = &startingDeadlineSeconds
 
 	return &spec, nil
 }
