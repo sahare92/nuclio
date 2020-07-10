@@ -77,9 +77,48 @@ func (cjpd *CronJobMonitoring) startStaleCronJobPodsDeletionLoop() error {
 				CoreV1().
 				Pods(cronJobPod.Namespace).
 				Delete(cronJobPod.Name, &metav1.DeleteOptions{})
-			cjpd.logger.WarnWith("Failed to cleanup stale cron job pod",
-				"podName", cronJobPod.Name,
-				"err", err)
+			if err != nil {
+				cjpd.logger.WarnWith("Failed to cleanup stale cron job pod",
+					"podName", cronJobPod.Name,
+					"err", err)
+			}
+		}
+
+		cjpd.deleteStaleJobs()
+	}
+}
+
+func (cjpd *CronJobMonitoring) deleteStaleJobs() {
+
+	// list all cron-job jobs
+	cronJobJobs, err := cjpd.controller.kubeClientSet.
+		BatchV1().
+		Jobs(cjpd.controller.namespace).
+		List(metav1.ListOptions{
+			LabelSelector: "nuclio.io/function-cron-job-pod=true",
+		})
+	if err != nil {
+		cjpd.logger.WarnWith("Failed to get cron-job jobs",
+			"namespace", cjpd.controller.namespace,
+			"err", err)
+	}
+
+	for _, job := range cronJobJobs.Items {
+
+		// handle the k8s jobs bug where a job resource is never deleted when it somehow gets to the invalid state
+		// where it has failed more times than its backoff limit
+		if job.Spec.BackoffLimit != nil &&
+			*job.Spec.BackoffLimit <= job.Status.Failed {
+			err := cjpd.controller.kubeClientSet.
+				BatchV1().
+				Jobs(job.Namespace).
+				Delete(job.Name, &metav1.DeleteOptions{})
+			if err != nil {
+				cjpd.logger.WarnWith("Failed to delete stuck cron-job job",
+					"namespace", job.Namespace,
+					"jobName", job.Name,
+					"err", err)
+			}
 		}
 	}
 }
