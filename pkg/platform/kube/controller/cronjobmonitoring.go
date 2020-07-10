@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuclio/logger"
 	"k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -65,21 +66,25 @@ func (cjpd *CronJobMonitoring) startStaleCronJobPodsDeletionLoop() error {
 			continue
 		}
 
-		for _, cronJobPod := range cronJobPods.Items {
+		for _, pod := range cronJobPods.Items {
 
 			// if this pod is in pending for too long - delete it too
-			if cronJobPod.Status.Phase == v1.PodPending &&
-				cronJobPod.ObjectMeta.CreationTimestamp.After(time.Now().Add(-time.Minute)) {
+			if pod.Status.Phase == v1.PodPending &&
+				pod.ObjectMeta.CreationTimestamp.After(time.Now().Add(-time.Minute)) {
 				continue
 			}
 
+			// TODO: delete this!!!!!!!!!!!!!!!!!
+			if pod.Status.Phase == v1.PodPending {
+				cjpd.logger.DebugWith("Deleting pending pod", "podName", pod.Name)
+			}
 			err := cjpd.controller.kubeClientSet.
 				CoreV1().
-				Pods(cronJobPod.Namespace).
-				Delete(cronJobPod.Name, &metav1.DeleteOptions{})
-			if err != nil {
-				cjpd.logger.WarnWith("Failed to cleanup stale cron job pod",
-					"podName", cronJobPod.Name,
+				Pods(pod.Namespace).
+				Delete(pod.Name, &metav1.DeleteOptions{})
+			if err != nil && !apierrors.IsNotFound(err) {
+				cjpd.logger.WarnWith("Failed to cleanup stale cron-job pod",
+					"podName", pod.Name,
 					"err", err)
 			}
 		}
@@ -113,7 +118,7 @@ func (cjpd *CronJobMonitoring) deleteStaleJobs() {
 				BatchV1().
 				Jobs(job.Namespace).
 				Delete(job.Name, &metav1.DeleteOptions{})
-			if err != nil {
+			if err != nil && !apierrors.IsNotFound(err){
 				cjpd.logger.WarnWith("Failed to delete stuck cron-job job",
 					"namespace", job.Namespace,
 					"jobName", job.Name,
