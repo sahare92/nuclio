@@ -12,47 +12,47 @@ import (
 )
 
 type CronJobMonitoring struct {
-	logger                           logger.Logger
-	controller                       *Controller
-	staleCronJobPodsDeletionInterval *time.Duration
+	logger                               logger.Logger
+	controller                           *Controller
+	cronJobStaleResourcesCleanupInterval *time.Duration
 }
 
 func NewCronJobMonitoring(parentLogger logger.Logger,
 	controller *Controller,
-	staleCronJobPodsDeletionInterval *time.Duration) *CronJobMonitoring {
+	cronJobStaleResourcesCleanupInterval *time.Duration) *CronJobMonitoring {
 
 	loggerInstance := parentLogger.GetChild("cron_job_monitoring")
 
 	newCronJobMonitoring := &CronJobMonitoring{
-		logger:                           loggerInstance,
-		controller:                       controller,
-		staleCronJobPodsDeletionInterval: staleCronJobPodsDeletionInterval,
+		logger:                               loggerInstance,
+		controller:                           controller,
+		cronJobStaleResourcesCleanupInterval: cronJobStaleResourcesCleanupInterval,
 	}
 
 	parentLogger.DebugWith("Successfully created cron job monitoring instance",
-		"staleCronJobPodsDeletionInterval", staleCronJobPodsDeletionInterval)
+		"cronJobStaleResourcesCleanupInterval", cronJobStaleResourcesCleanupInterval)
 
 	return newCronJobMonitoring
 }
 
 func (cjm *CronJobMonitoring) start() {
 
-	go cjm.startStaleCronJobPodsDeletionLoop() // nolint: errcheck
+	go cjm.startCronJobStaleResourcesCleanupLoop() // nolint: errcheck
 
 }
 
-// delete all stale cron job pods (as k8s lacks this logic, and CronJob pods are never deleted)
-func (cjm *CronJobMonitoring) startStaleCronJobPodsDeletionLoop() error {
+// cleanup all cron job related stale resources (as k8s lacks this logic)
+func (cjm *CronJobMonitoring) startCronJobStaleResourcesCleanupLoop() error {
 	stalePodsFieldSelector := cjm.compileStalePodsFieldSelector()
 
-	cjm.logger.InfoWith("Starting stale cron job pods deletion loop",
-		"staleCronJobPodsDeletionInterval", cjm.staleCronJobPodsDeletionInterval,
+	cjm.logger.InfoWith("Starting cron job stale resources cleanup loop",
+		"cronJobStaleResourcesCleanupInterval", cjm.cronJobStaleResourcesCleanupInterval,
 		"fieldSelectors", stalePodsFieldSelector)
 
 	for {
 
-		// sleep until next deletion time staleCronJobPodsDeletionInterval
-		time.Sleep(*cjm.staleCronJobPodsDeletionInterval)
+		// sleep until next deletion time cronJobStaleResourcesCleanupInterval
+		time.Sleep(*cjm.cronJobStaleResourcesCleanupInterval)
 
 		cjm.deleteStalePods(stalePodsFieldSelector)
 		cjm.deleteStaleJobs()
