@@ -1486,6 +1486,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	resources Resources,
 	cronTrigger functionconfig.Trigger) (*batchv1beta1.CronJobSpec, error) {
 	var err error
+	zero := int32(0)
 	one := int32(1)
 	spec := batchv1beta1.CronJobSpec{}
 
@@ -1579,6 +1580,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 					RestartPolicy: v1.RestartPolicyNever,
 				},
 			},
+			TTLSecondsAfterFinished: &zero,
 		},
 	}
 
