@@ -1593,6 +1593,8 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 	spec.SuccessfulJobsHistoryLimit = &one
 	spec.FailedJobsHistoryLimit = &one
 
+	spec.JobTemplate.Spec.TTLSecondsAfterFinished = &one
+
 	return &spec, nil
 }
 
