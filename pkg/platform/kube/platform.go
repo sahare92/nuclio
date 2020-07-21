@@ -504,6 +504,128 @@ func (p *Platform) GetProjects(getProjectsOptions *platform.GetProjectsOptions) 
 	return platformProjects, nil
 }
 
+// CreateAPIGateway will probably create a new api-gateway
+func (p *Platform) CreateAPIGateway(createAPIGatewayOptions *platform.CreateAPIGatewayOptions) error {
+	newAPIGateway := nuclioio.NuclioAPIGateway{}
+	p.platformAPIGatewayToAPIGateway(&createAPIGatewayOptions.APIGatewayConfig, &newAPIGateway)
+
+	_, err := p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioAPIGateways(createAPIGatewayOptions.APIGatewayConfig.Meta.Namespace).
+		Create(&newAPIGateway)
+
+	if err != nil {
+		return errors.Wrap(err, "Failed to create api-gateway")
+	}
+
+	return nil
+}
+
+// UpdateAPIGateway will update a previously existing api-gateway
+func (p *Platform) UpdateAPIGateway(updateAPIGatewayOptions *platform.UpdateAPIGatewayOptions) error {
+	apiGateway, err := p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioAPIGateways(updateAPIGatewayOptions.APIGatewayConfig.Meta.Namespace).
+		Get(updateAPIGatewayOptions.APIGatewayConfig.Meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "Failed to get api-gateway to update")
+	}
+
+	updatedAPIGateway := nuclioio.NuclioAPIGateway{}
+	p.platformAPIGatewayToAPIGateway(&updateAPIGatewayOptions.APIGatewayConfig, &updatedAPIGateway)
+	apiGateway.Spec = updatedAPIGateway.Spec
+
+	_, err = p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioAPIGateways(updateAPIGatewayOptions.APIGatewayConfig.Meta.Namespace).
+		Update(apiGateway)
+
+	if err != nil {
+		return errors.Wrap(err, "Failed to update api-gateway")
+	}
+
+	return nil
+}
+
+// DeleteAPIGateway will delete a previously existing api-gateway
+func (p *Platform) DeleteAPIGateway(deleteAPIGatewayOptions *platform.DeleteAPIGatewayOptions) error {
+
+	if err := p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioAPIGateways(deleteAPIGatewayOptions.Meta.Namespace).
+		Delete(deleteAPIGatewayOptions.Meta.Name, &metav1.DeleteOptions{}); err != nil {
+		return errors.Wrapf(err,
+			"Failed to delete api-gateway %s from namespace %s",
+			deleteAPIGatewayOptions.Meta.Name,
+			deleteAPIGatewayOptions.Meta.Namespace)
+	}
+
+	return nil
+}
+
+// GetAPIGateways will list existing api-gateways
+func (p *Platform) GetAPIGateways(getAPIGatewaysOptions *platform.GetAPIGatewaysOptions) ([]platform.APIGateway, error) {
+	var platformAPIGateways []platform.APIGateway
+	var apiGateways []nuclioio.NuclioAPIGateway
+
+	// if identifier specified, we need to get a single NuclioAPIGateway
+	if getAPIGatewaysOptions.Meta.Name != "" {
+
+		// get specific NuclioAPIGateway CR
+		APIGateway, err := p.consumer.nuclioClientSet.NuclioV1beta1().
+			NuclioAPIGateways(getAPIGatewaysOptions.Meta.Namespace).
+			Get(getAPIGatewaysOptions.Meta.Name, metav1.GetOptions{})
+
+		if err != nil {
+
+			// if we didn't find the NuclioAPIGateway, return an empty slice
+			if apierrors.IsNotFound(err) {
+				return platformAPIGateways, nil
+			}
+
+			return nil, errors.Wrap(err, "Failed to get api-gateway")
+		}
+
+		apiGateways = append(apiGateways, *APIGateway)
+
+	} else {
+
+		apiGatewayInstanceList, err := p.consumer.nuclioClientSet.NuclioV1beta1().
+			NuclioAPIGateways(getAPIGatewaysOptions.Meta.Namespace).
+			List(metav1.ListOptions{LabelSelector: ""})
+
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to list api-gateways")
+		}
+
+		// convert []NuclioAPIGateway to []*NuclioAPIGateway
+		apiGateways = apiGatewayInstanceList.Items
+	}
+
+	// convert []nuclioio.NuclioAPIGateway -> NuclioAPIGateway
+	for apiGatewayInstanceIndex := 0; apiGatewayInstanceIndex < len(apiGateways); apiGatewayInstanceIndex++ {
+		apiGatewayInstance := apiGateways[apiGatewayInstanceIndex]
+
+		newAPIGateway, err := platform.NewAbstractAPIGateway(p.Logger,
+			p,
+			platform.APIGatewayConfig{
+				Meta: platform.APIGatewayMeta{
+					Name:        apiGatewayInstance.Name,
+					Namespace:   apiGatewayInstance.Namespace,
+					Labels:      apiGatewayInstance.Labels,
+					Annotations: apiGatewayInstance.Annotations,
+				},
+				Spec:   apiGatewayInstance.Spec,
+				Status: apiGatewayInstance.Status,
+			})
+
+		if err != nil {
+			return nil, err
+		}
+
+		platformAPIGateways = append(platformAPIGateways, newAPIGateway)
+	}
+
+	// render it
+	return platformAPIGateways, nil
+}
+
 // CreateFunctionEvent will create a new function event that can later be used as a template from
 // which to invoke functions
 func (p *Platform) CreateFunctionEvent(createFunctionEventOptions *platform.CreateFunctionEventOptions) error {
@@ -852,6 +974,15 @@ func (p *Platform) platformProjectToProject(platformProject *platform.ProjectCon
 	project.Labels = platformProject.Meta.Labels
 	project.Annotations = platformProject.Meta.Annotations
 	project.Spec = platformProject.Spec
+}
+
+func (p *Platform) platformAPIGatewayToAPIGateway(platformAPIGateway *platform.APIGatewayConfig, project *nuclioio.NuclioAPIGateway) {
+	project.Name = platformAPIGateway.Meta.Name
+	project.Namespace = platformAPIGateway.Meta.Namespace
+	project.Labels = platformAPIGateway.Meta.Labels
+	project.Annotations = platformAPIGateway.Meta.Annotations
+	project.Spec = platformAPIGateway.Spec
+	project.Status = platformAPIGateway.Status
 }
 
 func (p *Platform) platformFunctionEventToFunctionEvent(platformFunctionEvent *platform.FunctionEventConfig, functionEvent *nuclioio.NuclioFunctionEvent) {

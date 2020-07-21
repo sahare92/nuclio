@@ -350,6 +350,27 @@ func (ap *Platform) GetProjects(getProjectsOptions *platform.GetProjectsOptions)
 	return nil, errors.New("Unsupported")
 }
 
+
+// CreateAPIGateway will probably create a new api-gateway
+func (ap *Platform) CreateAPIGateway(createAPIGatewayOptions *platform.CreateAPIGatewayOptions) error {
+	return errors.New("Unsupported")
+}
+
+// UpdateAPIGateway will update a previously existing api-gateway
+func (ap *Platform) UpdateAPIGateway(updateAPIGatewayOptions *platform.UpdateAPIGatewayOptions) error {
+	return errors.New("Unsupported")
+}
+
+// DeleteAPIGateway will delete a previously existing api-gateway
+func (ap *Platform) DeleteAPIGateway(deleteAPIGatewayOptions *platform.DeleteAPIGatewayOptions) error {
+	return errors.New("Unsupported")
+}
+
+// GetAPIGateways will list existing api-gateways
+func (ap *Platform) GetAPIGateways(getAPIGatewaysOptions *platform.GetAPIGatewaysOptions) ([]platform.APIGateway, error) {
+	return nil, errors.New("Unsupported")
+}
+
 // CreateFunctionEvent will create a new function event that can later be used as a template from
 // which to invoke functions
 func (ap *Platform) CreateFunctionEvent(createFunctionEventOptions *platform.CreateFunctionEventOptions) error {
