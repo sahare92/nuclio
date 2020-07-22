@@ -532,6 +532,7 @@ func (p *Platform) UpdateAPIGateway(updateAPIGatewayOptions *platform.UpdateAPIG
 	updatedAPIGateway := nuclioio.NuclioAPIGateway{}
 	p.platformAPIGatewayToAPIGateway(&updateAPIGatewayOptions.APIGatewayConfig, &updatedAPIGateway)
 	apiGateway.Spec = updatedAPIGateway.Spec
+	apiGateway.Status.State = platform.APIGatewayStateWaitingForProvisioning
 
 	_, err = p.consumer.nuclioClientSet.NuclioV1beta1().
 		NuclioAPIGateways(updateAPIGatewayOptions.APIGatewayConfig.Meta.Namespace).
