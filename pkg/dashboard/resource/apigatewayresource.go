@@ -352,7 +352,7 @@ func (agr *apiGatewayResource) processAPIGatewayInfo(apiGatewayInfoInstance *api
 
 // register the resource
 var apiGatewayResourceInstance = &apiGatewayResource{
-	resource: newResource("api/api-gateways", []restful.ResourceMethod{
+	resource: newResource("api/api_gateways", []restful.ResourceMethod{
 		restful.ResourceMethodGetList,
 		restful.ResourceMethodGetDetail,
 		restful.ResourceMethodCreate,
