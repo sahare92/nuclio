@@ -192,6 +192,11 @@ func (agr *apiGatewayResource) GetCustomRoutes() ([]restful.CustomRoute, error) 
 	return []restful.CustomRoute{
 		{
 			Pattern:   "/",
+			Method:    http.MethodPut,
+			RouteFunc: agr.updateAPIGateway,
+		},
+		{
+			Pattern:   "/",
 			Method:    http.MethodDelete,
 			RouteFunc: agr.deleteAPIGateway,
 		},
