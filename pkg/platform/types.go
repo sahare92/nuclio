@@ -245,8 +245,13 @@ type APIGatewayMeta struct {
 }
 
 type APIGatewayAuthenticationSpec struct {
-	BasicAuth *ingress.BasicAuth `json:"basic_auth,omitempty"`
-	DexAuth   *ingress.DexAuth   `json:"dex_auth,omitempty"`
+	BasicAuth *BasicAuth       `json:"basic_auth,omitempty"`
+	DexAuth   *ingress.DexAuth `json:"dex_auth,omitempty"`
+}
+
+type BasicAuth struct {
+	Username string `json:"username"`
+	Password string `json:"password,omitempty"`
 }
 
 type APIGatewayUpstreamKind string
