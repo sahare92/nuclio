@@ -316,6 +316,11 @@ func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Reques
 func (agr *apiGatewayResource) processAPIGatewayInfo(apiGatewayInfoInstance *apiGatewayInfo, nameRequired bool) error {
 	var err error
 
+	// enrich meta name from spec if needed
+	if apiGatewayInfoInstance.Meta.Name == "" {
+		apiGatewayInfoInstance.Meta.Name = apiGatewayInfoInstance.Spec.Name
+	}
+
 	// override namespace if applicable
 	if apiGatewayInfoInstance.Meta != nil {
 		apiGatewayInfoInstance.Meta.Namespace = agr.getNamespaceOrDefault(apiGatewayInfoInstance.Meta.Namespace)
