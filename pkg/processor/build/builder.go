@@ -1601,7 +1601,7 @@ func (b *Builder) getFunctionTempFile(tempDir string, functionPath string, isArc
 			b.logger.DebugWith("Could not determine file extension, fallback to .zip",
 				"functionPath",
 				functionPath)
-			fileExtension = "zip"
+			fileExtension = "tar"
 		} else {
 			fileExtension = fmt.Sprint(fileArchiver)
 		}
