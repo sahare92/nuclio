@@ -24,6 +24,7 @@ import (
 	"github.com/nuclio/nuclio/pkg/platform/kube/ingress"
 
 	"github.com/nuclio/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //
@@ -238,10 +239,11 @@ func (s *FunctionEventSpec) DeepCopyInto(out *FunctionEventSpec) {
 const DefaultAPIGatewayName string = "default"
 
 type APIGatewayMeta struct {
-	Name        string            `json:"name,omitempty"`
-	Namespace   string            `json:"namespace,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
+	Name              string            `json:"name,omitempty"`
+	Namespace         string            `json:"namespace,omitempty"`
+	Labels            map[string]string `json:"labels,omitempty"`
+	Annotations       map[string]string `json:"annotations,omitempty"`
+	CreationTimestamp metav1.Time       `json:"annotations,omitempty"`
 }
 
 type APIGatewayAuthenticationSpec struct {

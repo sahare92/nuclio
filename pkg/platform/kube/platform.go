@@ -607,10 +607,11 @@ func (p *Platform) GetAPIGateways(getAPIGatewaysOptions *platform.GetAPIGateways
 			p,
 			platform.APIGatewayConfig{
 				Meta: platform.APIGatewayMeta{
-					Name:        apiGatewayInstance.Name,
-					Namespace:   apiGatewayInstance.Namespace,
-					Labels:      apiGatewayInstance.Labels,
-					Annotations: apiGatewayInstance.Annotations,
+					Name:              apiGatewayInstance.Name,
+					Namespace:         apiGatewayInstance.Namespace,
+					Labels:            apiGatewayInstance.Labels,
+					Annotations:       apiGatewayInstance.Annotations,
+					CreationTimestamp: apiGatewayInstance.CreationTimestamp,
 				},
 				Spec:   apiGatewayInstance.Spec,
 				Status: apiGatewayInstance.Status,
