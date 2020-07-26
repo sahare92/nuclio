@@ -243,7 +243,7 @@ type APIGatewayMeta struct {
 	Namespace         string            `json:"namespace,omitempty"`
 	Labels            map[string]string `json:"labels,omitempty"`
 	Annotations       map[string]string `json:"annotations,omitempty"`
-	CreationTimestamp metav1.Time       `json:"annotations,omitempty"`
+	CreationTimestamp metav1.Time       `json:"creationTimeStamp,omitempty"`
 }
 
 type APIGatewayAuthenticationSpec struct {
