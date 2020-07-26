@@ -99,7 +99,7 @@ func (agr *apiGatewayResource) GetByID(request *http.Request, id string) (restfu
 
 // Create deploys a api-gateway
 func (agr *apiGatewayResource) Create(request *http.Request) (id string, attributes restful.Attributes, responseErr error) {
-	apiGatewayInfo, responseErr := agr.getAPIGatewayInfoFromRequest(request, true)
+	apiGatewayInfo, responseErr := agr.getAPIGatewayInfoFromRequest(request, true, true)
 	if responseErr != nil {
 		return
 	}
@@ -145,7 +145,7 @@ func (agr *apiGatewayResource) updateAPIGateway(request *http.Request) (*restful
 	statusCode := http.StatusNoContent
 
 	// get api-gateway config and status from body
-	apiGatewayInfo, err := agr.getAPIGatewayInfoFromRequest(request, true)
+	apiGatewayInfo, err := agr.getAPIGatewayInfoFromRequest(request, true, false)
 	if err != nil {
 		agr.Logger.WarnWith("Failed to get api-gateway config and status from body", "err", err)
 
@@ -244,7 +244,7 @@ func (agr *apiGatewayResource) createAPIGateway(apiGatewayInfoInstance *apiGatew
 func (agr *apiGatewayResource) deleteAPIGateway(request *http.Request) (*restful.CustomRouteFuncResponse, error) {
 
 	// get api-gateway config and status from body
-	apiGatewayInfo, err := agr.getAPIGatewayInfoFromRequest(request, true)
+	apiGatewayInfo, err := agr.getAPIGatewayInfoFromRequest(request, true, false)
 	if err != nil {
 		agr.Logger.WarnWith("Failed to get api-gateway config and status from body", "err", err)
 
@@ -291,7 +291,9 @@ func (agr *apiGatewayResource) getNamespaceFromRequest(request *http.Request) st
 	return agr.getNamespaceOrDefault(request.Header.Get("x-nuclio-api-gateway-namespace"))
 }
 
-func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Request, nameRequired bool) (*apiGatewayInfo, error) {
+func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Request,
+	nameRequired bool,
+	specRequired bool) (*apiGatewayInfo, error) {
 
 	// read body
 	body, err := ioutil.ReadAll(request.Body)
@@ -305,7 +307,7 @@ func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Reques
 		return nil, nuclio.WrapErrBadRequest(errors.Wrap(err, "Failed to parse JSON body"))
 	}
 
-	err = agr.processAPIGatewayInfo(&apiGatewayInfoInstance, nameRequired)
+	err = agr.processAPIGatewayInfo(&apiGatewayInfoInstance, nameRequired, specRequired)
 	if err != nil {
 		return nil, nuclio.WrapErrBadRequest(errors.Wrap(err, "Failed to process api-gateway info"))
 	}
@@ -313,7 +315,9 @@ func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Reques
 	return &apiGatewayInfoInstance, nil
 }
 
-func (agr *apiGatewayResource) processAPIGatewayInfo(apiGatewayInfoInstance *apiGatewayInfo, nameRequired bool) error {
+func (agr *apiGatewayResource) processAPIGatewayInfo(apiGatewayInfoInstance *apiGatewayInfo,
+	nameRequired bool,
+	specRequired bool) error {
 	var err error
 
 	// enrich meta name from spec if needed
@@ -340,11 +344,14 @@ func (agr *apiGatewayResource) processAPIGatewayInfo(apiGatewayInfoInstance *api
 		return nuclio.WrapErrBadRequest(err)
 	}
 
-	// spec must exist
+	// ensure spec exists if it's required
 	if apiGatewayInfoInstance.Spec == nil {
-		err = errors.New("Api-gateway spec must be provided")
+		if specRequired {
+			err = errors.New("Api-gateway spec must be provided")
+			return nuclio.WrapErrBadRequest(err)
+		}
 
-		return nuclio.WrapErrBadRequest(err)
+		apiGatewayInfoInstance.Spec = &platform.APIGatewaySpec{}
 	}
 
 	// status is optional, ensure it exists
