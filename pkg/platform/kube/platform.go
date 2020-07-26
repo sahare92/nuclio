@@ -566,12 +566,12 @@ func (p *Platform) GetAPIGateways(getAPIGatewaysOptions *platform.GetAPIGateways
 	var apiGateways []nuclioio.NuclioAPIGateway
 
 	// if identifier specified, we need to get a single NuclioAPIGateway
-	if getAPIGatewaysOptions.Meta.Name != "" {
+	if getAPIGatewaysOptions.Name != "" {
 
 		// get specific NuclioAPIGateway CR
 		APIGateway, err := p.consumer.nuclioClientSet.NuclioV1beta1().
-			NuclioAPIGateways(getAPIGatewaysOptions.Meta.Namespace).
-			Get(getAPIGatewaysOptions.Meta.Name, metav1.GetOptions{})
+			NuclioAPIGateways(getAPIGatewaysOptions.Namespace).
+			Get(getAPIGatewaysOptions.Name, metav1.GetOptions{})
 
 		if err != nil {
 
@@ -588,7 +588,7 @@ func (p *Platform) GetAPIGateways(getAPIGatewaysOptions *platform.GetAPIGateways
 	} else {
 
 		apiGatewayInstanceList, err := p.consumer.nuclioClientSet.NuclioV1beta1().
-			NuclioAPIGateways(getAPIGatewaysOptions.Meta.Namespace).
+			NuclioAPIGateways(getAPIGatewaysOptions.Namespace).
 			List(metav1.ListOptions{LabelSelector: ""})
 
 		if err != nil {

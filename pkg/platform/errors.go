@@ -22,3 +22,4 @@ import (
 
 // A project contains functions, cannot be deleted
 var ErrProjectContainsFunctions = nuclio.NewErrConflict("Project contains functions")
+var ErrProjectContainsAPIGateways = nuclio.NewErrConflict("Project contains api-gateways")

@@ -51,10 +51,8 @@ func (agr *apiGatewayResource) GetAll(request *http.Request) (map[string]restful
 	}
 
 	apiGateways, err := agr.getPlatform().GetAPIGateways(&platform.GetAPIGatewaysOptions{
-		Meta: platform.APIGatewayMeta{
-			Name:      request.Header.Get("x-nuclio-api-gateway-name"),
-			Namespace: namespace,
-		},
+		Name:      request.Header.Get("x-nuclio-api-gateway-name"),
+		Namespace: namespace,
 	})
 
 	if err != nil {
@@ -79,10 +77,8 @@ func (agr *apiGatewayResource) GetByID(request *http.Request, id string) (restfu
 	}
 
 	apiGateways, err := agr.getPlatform().GetAPIGateways(&platform.GetAPIGatewaysOptions{
-		Meta: platform.APIGatewayMeta{
-			Name:      id,
-			Namespace: namespace,
-		},
+		Name:      id,
+		Namespace: namespace,
 	})
 
 	if err != nil {
