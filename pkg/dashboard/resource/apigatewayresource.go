@@ -50,10 +50,7 @@ func (agr *apiGatewayResource) GetAll(request *http.Request) (map[string]restful
 		return nil, nuclio.NewErrBadRequest("Namespace must exist")
 	}
 
-	apiGateways, err := agr.getPlatform().GetAPIGateways(&platform.GetAPIGatewaysOptions{
-		Name:      request.Header.Get("x-nuclio-api-gateway-name"),
-		Namespace: namespace,
-	})
+	apiGateways, err := agr.getPlatform().GetAPIGateways(&platform.GetAPIGatewaysOptions{Namespace: namespace})
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get api-gateways")
