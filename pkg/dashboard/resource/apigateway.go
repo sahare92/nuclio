@@ -51,7 +51,6 @@ func (agr *apiGatewayResource) GetAll(request *http.Request) (map[string]restful
 	}
 
 	apiGateways, err := agr.getPlatform().GetAPIGateways(&platform.GetAPIGatewaysOptions{Namespace: namespace})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get api-gateways")
 	}

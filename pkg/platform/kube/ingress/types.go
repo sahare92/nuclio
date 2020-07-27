@@ -24,8 +24,8 @@ type Spec struct {
 type SpecRole string
 
 type Authentication struct {
-	BasicAuth *BasicAuth `json:"basic_auth,omitempty"`
-	DexAuth   *DexAuth   `json:"dex_auth,omitempty"`
+	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
+	DexAuth   *DexAuth   `json:"dexAuth,omitempty"`
 }
 
 type BasicAuth struct {
@@ -35,7 +35,7 @@ type BasicAuth struct {
 }
 
 type DexAuth struct {
-	Oauth2ProxyURL string `json:"oauth2_proxy_url,omitempty"`
+	Oauth2ProxyURL string `json:"oauth2ProxyUrl,omitempty"`
 }
 
 type AuthenticationMode string
