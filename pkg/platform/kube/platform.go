@@ -339,6 +339,8 @@ func (p *Platform) GetFunctions(getFunctionsOptions *platform.GetFunctionsOption
 
 	p.EnrichFunctionsWithDeployLogStream(functions)
 
+	p.enrichFunctionsWithAPIGateways(functions, getFunctionsOptions.Namespace)
+
 	return functions, nil
 }
 
@@ -889,6 +891,49 @@ func (p *Platform) SaveFunctionDeployLogs(functionName, namespace string) error 
 		FunctionMeta:   &function.GetConfig().Meta,
 		FunctionStatus: function.GetStatus(),
 	})
+}
+
+func (p *Platform) getFunctionToAPIGatewaysMapping(namespace string) (map[string][]string, error) {
+	functionToAPIGateways := map[string][]string{}
+
+	// get all api-gateways in the namespace
+	apiGateways, err := p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioAPIGateways(namespace).
+		List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to list api-gateways")
+	}
+
+	// iterate over all api-gateways
+	for _, apiGateway := range apiGateways.Items {
+
+		// iterate over all upstreams(functions) of the api-gateway
+		for _, upstream := range apiGateway.Spec.Upstreams {
+
+			// append the current api-gateway to the function's api-gateways list
+			functionToAPIGateways[upstream.Nucliofunction.Name] =
+				append(functionToAPIGateways[upstream.Nucliofunction.Name], apiGateway.Name)
+		}
+	}
+
+	return functionToAPIGateways, nil
+}
+
+func (p *Platform) enrichFunctionsWithAPIGateways(functions []platform.Function, namespace string) error {
+	var err error
+	var functionToAPIGateways map[string][]string
+
+	// get function to api-gateways mapping
+	if functionToAPIGateways, err = p.getFunctionToAPIGatewaysMapping(namespace); err != nil {
+		return errors.Wrap(err, "Failed to get function to api-gateways mapping")
+	}
+
+	// set the api-gateways list for every function according to the mapping above
+	for _, function := range functions {
+		function.GetStatus().APIGateways = functionToAPIGateways[function.GetConfig().Meta.Name]
+	}
+
+	return nil
 }
 
 func (p *Platform) clearCallStack(message string) string {
