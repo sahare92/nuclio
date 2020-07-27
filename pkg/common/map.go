@@ -95,6 +95,16 @@ func MapStringInterfaceGetOrDefault(mapStringInterface map[string]interface{}, k
 	return value
 }
 
+func RemoveStringFromSlice(s string, sl []string) []string {
+	for index, item := range sl {
+		if item == s {
+			return append(sl[:index], sl[index+1:]...)
+		}
+	}
+
+	return sl
+}
+
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {

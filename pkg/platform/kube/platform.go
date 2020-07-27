@@ -19,6 +19,7 @@ package kube
 import (
 	"bytes"
 	"fmt"
+	"github.com/nuclio/nuclio/pkg/common"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -504,6 +505,13 @@ func (p *Platform) GetProjects(getProjectsOptions *platform.GetProjectsOptions) 
 	return platformProjects, nil
 }
 
+type UpdateFunctionAPIGatewaysAction string
+
+const (
+	UpdateFunctionAPIGatewaysActionAdd    UpdateFunctionAPIGatewaysAction = "add"
+	UpdateFunctionAPIGatewaysActionRemove UpdateFunctionAPIGatewaysAction = "remove"
+)
+
 // CreateAPIGateway will probably create a new api-gateway
 func (p *Platform) CreateAPIGateway(createAPIGatewayOptions *platform.CreateAPIGatewayOptions) error {
 	newAPIGateway := nuclioio.NuclioAPIGateway{}
@@ -512,9 +520,12 @@ func (p *Platform) CreateAPIGateway(createAPIGatewayOptions *platform.CreateAPIG
 	_, err := p.consumer.nuclioClientSet.NuclioV1beta1().
 		NuclioAPIGateways(createAPIGatewayOptions.APIGatewayConfig.Meta.Namespace).
 		Create(&newAPIGateway)
-
 	if err != nil {
 		return errors.Wrap(err, "Failed to create api-gateway")
+	}
+
+	if err = p.updateUpstreamFunctionsAPIGateways(&newAPIGateway, UpdateFunctionAPIGatewaysActionAdd); err != nil {
+		return errors.Wrapf(err, "Failed to update api-gateways for upstream functions")
 	}
 
 	return nil
@@ -540,6 +551,10 @@ func (p *Platform) UpdateAPIGateway(updateAPIGatewayOptions *platform.UpdateAPIG
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to update api-gateway")
+	}
+
+	if err = p.updateUpstreamFunctionsAPIGateways(&updatedAPIGateway, UpdateFunctionAPIGatewaysActionAdd); err != nil {
+		return errors.Wrapf(err, "Failed to update api-gateways for upstream functions")
 	}
 
 	return nil
@@ -889,6 +904,100 @@ func (p *Platform) SaveFunctionDeployLogs(functionName, namespace string) error 
 		FunctionMeta:   &function.GetConfig().Meta,
 		FunctionStatus: function.GetStatus(),
 	})
+}
+
+func (p *Platform) updateUpstreamFunctionsAPIGateways(apiGateway *nuclioio.NuclioAPIGateway,
+	action UpdateFunctionAPIGatewaysAction) error {
+	var err error
+
+	upstreamFunctionNames := p.getUpstreamFunctionNames(apiGateway)
+	for _, functionName := range upstreamFunctionNames {
+
+		// retry to update the api-gateways inside function status for 3 times (in case of old resourceVersion)
+		retryAttempt := 1
+		maxRetries := 3
+		for retryAttempt < maxRetries {
+
+			// try to update function api-gateways depending on the given action
+			err = p.updateAPIGatewayToFunctionStatus(functionName, apiGateway, action)
+			if err == nil {
+				p.Logger.DebugWith("Successfully updated api-gateways for function",
+					"action", action,
+					"functionName", functionName)
+				break
+			}
+
+			// if failed and exceeded max retries, return matching error
+			if retryAttempt > maxRetries {
+				return errors.Wrapf(err, "Failed to update api-gateways for function:  %s. (exceeded max retries)")
+			}
+
+			// otherwise, log the error and retry
+			p.Logger.WarnWith("Failed to update api-gateways for function. Retrying",
+				"functionName", functionName,
+				"retryAttempt", retryAttempt,
+				"maxRetries", maxRetries,
+				"action", action,
+				"err", err)
+
+			// increase retry attempt
+			retryAttempt++
+		}
+	}
+
+	return nil
+}
+
+func (p *Platform) getUpstreamFunctionNames(apiGateway *nuclioio.NuclioAPIGateway) []string {
+	var upstreamFunctionNames []string
+
+	for _, upstream := range apiGateway.Spec.Upstreams {
+		upstreamFunctionNames = append(upstreamFunctionNames, upstream.Nucliofunction.Name)
+	}
+
+	return upstreamFunctionNames
+}
+
+func (p *Platform) updateAPIGatewayToFunctionStatus(functionName string,
+	apiGateway *nuclioio.NuclioAPIGateway,
+	action UpdateFunctionAPIGatewaysAction) error {
+
+	function, err := p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioFunctions(apiGateway.Namespace).
+		Get(functionName, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "Failed to get function")
+	}
+
+	apiGateways := function.Status.APIGateways
+
+	switch action {
+	case UpdateFunctionAPIGatewaysActionAdd:
+
+		// if api-gateway isn't there already - add it
+		if common.StringInSlice(apiGateway.Name, apiGateways) {
+			return nil
+		}
+		apiGateways = append(apiGateways, apiGateway.Name)
+
+	case UpdateFunctionAPIGatewaysActionRemove:
+
+		// if api-gateway is there - remove it
+		apiGateways = common.RemoveStringFromSlice(apiGateway.Name, apiGateways)
+	default:
+		return errors.Errorf("Unknown update upstream functions api-gateways action: %s", action)
+	}
+
+	function.Status.APIGateways = apiGateways
+
+	_, err = p.consumer.nuclioClientSet.NuclioV1beta1().
+		NuclioFunctions(function.Namespace).
+		UpdateStatus(function)
+	if err != nil {
+		return errors.Wrap(err, "Failed to update function status")
+	}
+
+	return nil
 }
 
 func (p *Platform) clearCallStack(message string) string {
