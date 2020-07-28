@@ -89,21 +89,21 @@ func (agr *apiGatewayResource) GetByID(request *http.Request, id string) (restfu
 	return agr.apiGatewayToAttributes(apiGateway), nil
 }
 
-// Create deploys a api-gateway
+// Create deploys an api-gateway
 func (agr *apiGatewayResource) Create(request *http.Request) (id string, attributes restful.Attributes, responseErr error) {
 	apiGatewayInfo, responseErr := agr.getAPIGatewayInfoFromRequest(request, true, true)
 	if responseErr != nil {
 		return
 	}
 
-	// create a api-gateway config
+	// create an api-gateway config
 	apiGatewayConfig := platform.APIGatewayConfig{
 		Meta:   *apiGatewayInfo.Meta,
 		Spec:   *apiGatewayInfo.Spec,
 		Status: *apiGatewayInfo.Status,
 	}
 
-	// create a api-gateway
+	// create an api-gateway
 	newAPIGateway, err := platform.NewAbstractAPIGateway(agr.Logger, agr.getPlatform(), apiGatewayConfig)
 	if err != nil {
 		return "", nil, nuclio.WrapErrInternalServerError(err)
@@ -111,11 +111,9 @@ func (agr *apiGatewayResource) Create(request *http.Request) (id string, attribu
 
 	// just deploy. the status is async through polling
 	agr.Logger.DebugWith("Creating api-gateway", "newApi-Gateway", newAPIGateway)
-	err = agr.getPlatform().CreateAPIGateway(&platform.CreateAPIGatewayOptions{
+	if err = agr.getPlatform().CreateAPIGateway(&platform.CreateAPIGatewayOptions{
 		APIGatewayConfig: *newAPIGateway.GetConfig(),
-	})
-
-	if err != nil {
+	}); err != nil {
 		if strings.Contains(errors.Cause(err).Error(), "already exists") {
 			return "", nil, nuclio.WrapErrConflict(err)
 		}
@@ -153,16 +151,12 @@ func (agr *apiGatewayResource) updateAPIGateway(request *http.Request) (*restful
 		Status: *apiGatewayInfo.Status,
 	}
 
-	err = agr.getPlatform().UpdateAPIGateway(&platform.UpdateAPIGatewayOptions{
+	if err = agr.getPlatform().UpdateAPIGateway(&platform.UpdateAPIGatewayOptions{
 		APIGatewayConfig: apiGatewayConfig,
-	})
-
-	if err != nil {
+	}); err != nil {
 		agr.Logger.WarnWith("Failed to update api-gateway", "err", err)
-	}
 
-	// if there was an error, try to get the status code
-	if err != nil {
+		// try to get the status code
 		if errWithStatusCode, ok := err.(nuclio.ErrorWithStatusCode); ok {
 			statusCode = errWithStatusCode.StatusCode()
 		}
@@ -198,14 +192,14 @@ func (agr *apiGatewayResource) GetCustomRoutes() ([]restful.CustomRoute, error) 
 func (agr *apiGatewayResource) createAPIGateway(apiGatewayInfoInstance *apiGatewayInfo) (id string,
 	attributes restful.Attributes, responseErr error) {
 
-	// create a api-gateway config
+	// create an api-gateway config
 	apiGatewayConfig := platform.APIGatewayConfig{
 		Meta:   *apiGatewayInfoInstance.Meta,
 		Spec:   *apiGatewayInfoInstance.Spec,
 		Status: *apiGatewayInfoInstance.Status,
 	}
 
-	// create a api-gateway
+	// create an api-gateway
 	newAPIGateway, err := platform.NewAbstractAPIGateway(agr.Logger, agr.getPlatform(), apiGatewayConfig)
 	if err != nil {
 		return "", nil, nuclio.WrapErrInternalServerError(err)
@@ -213,11 +207,9 @@ func (agr *apiGatewayResource) createAPIGateway(apiGatewayInfoInstance *apiGatew
 
 	// just deploy. the status is async through polling
 	agr.Logger.DebugWith("Creating api-gateway", "newApi-Gateway", newAPIGateway)
-	err = agr.getPlatform().CreateAPIGateway(&platform.CreateAPIGatewayOptions{
+	if err = agr.getPlatform().CreateAPIGateway(&platform.CreateAPIGatewayOptions{
 		APIGatewayConfig: *newAPIGateway.GetConfig(),
-	})
-
-	if err != nil {
+	}); err != nil {
 		if strings.Contains(errors.Cause(err).Error(), "already exists") {
 			return "", nil, nuclio.WrapErrConflict(err)
 		}
@@ -249,9 +241,10 @@ func (agr *apiGatewayResource) deleteAPIGateway(request *http.Request) (*restful
 	deleteAPIGatewayOptions := platform.DeleteAPIGatewayOptions{}
 	deleteAPIGatewayOptions.Meta = *apiGatewayInfo.Meta
 
-	err = agr.getPlatform().DeleteAPIGateway(&deleteAPIGatewayOptions)
-	if err != nil {
+	if err = agr.getPlatform().DeleteAPIGateway(&deleteAPIGatewayOptions); err != nil {
 		statusCode := http.StatusInternalServerError
+
+		// set specific error status code if exists
 		if errWithStatus, ok := err.(*nuclio.ErrorWithStatusCode); ok {
 			statusCode = errWithStatus.StatusCode()
 		}
@@ -294,13 +287,11 @@ func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Reques
 	}
 
 	apiGatewayInfoInstance := apiGatewayInfo{}
-	err = json.Unmarshal(body, &apiGatewayInfoInstance)
-	if err != nil {
+	if err = json.Unmarshal(body, &apiGatewayInfoInstance); err != nil {
 		return nil, nuclio.WrapErrBadRequest(errors.Wrap(err, "Failed to parse JSON body"))
 	}
 
-	err = agr.processAPIGatewayInfo(&apiGatewayInfoInstance, nameRequired, specRequired)
-	if err != nil {
+	if err = agr.processAPIGatewayInfo(&apiGatewayInfoInstance, nameRequired, specRequired); err != nil {
 		return nil, nuclio.WrapErrBadRequest(errors.Wrap(err, "Failed to process api-gateway info"))
 	}
 

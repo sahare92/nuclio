@@ -24,6 +24,10 @@ controller:
       numWorkers: 2
       enabled: false
 
+  # these URLs will be used to generate an ingress with iguazio access-key authentication mode
+  iguazioAuthURL: ""
+  iguazioSigninURL: ""
+
   # the image of the created k8s cron job for function cron triggers
   cronTriggerCronJobImage:
     repository: appropriate/curl

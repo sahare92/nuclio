@@ -221,10 +221,10 @@ func (m *Manager) compileSessionVerificationAnnotations(sessionVerificationEndpo
 		"nginx.ingress.kubernetes.io/auth-response-headers": "X-Remote-User,X-V3io-Session-Key",
 		"nginx.ingress.kubernetes.io/auth-url": fmt.Sprintf(
 			"https://%s%s",
-			common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_IGUAZIO_AUTH_URL", ""),
+			common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_IGUAZIO_AUTH_URL", ""),
 			sessionVerificationEndpoint),
 		"nginx.ingress.kubernetes.io/auth-signin": fmt.Sprintf("https://%s/login",
-			common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_IGUAZIO_SIGNIN_URL", "")),
+			common.GetEnvOrDefaultString("NUCLIO_CONTROLLER_IGUAZIO_SIGNIN_URL", "")),
 		"nginx.ingress.kubernetes.io/configuration-snippet": "proxy_set_header authorization \"\";",
 	}, nil
 }

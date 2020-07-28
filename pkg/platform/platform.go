@@ -97,7 +97,7 @@ type Platform interface {
 	// API Gateway
 	//
 
-	// Create APIGateway will probably create a new gateway
+	// Create APIGateway will probably create a new api-gateway
 	CreateAPIGateway(createAPIGatewayOptions *CreateAPIGatewayOptions) error
 
 	// UpdateAPIGateway will update a previously deployed api-gateway
