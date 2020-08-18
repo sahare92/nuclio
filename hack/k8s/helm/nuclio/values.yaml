@@ -6,7 +6,7 @@ controller:
   enabled: true
   image:
     repository: quay.io/nuclio/controller
-    tag: 1.4.12-amd64
+    tag: 1.4.15-amd64
     pullPolicy: IfNotPresent  
 
   # Uncomment to have the controller to listen only the namespace's events, 
@@ -22,7 +22,6 @@ controller:
       numWorkers: 2
     apiGateway:
       numWorkers: 2
-      enabled: false
 
   # these URLs will be used to generate an ingress with iguazio access-key authentication mode
   iguazioAuthURL: ""
@@ -40,7 +39,7 @@ dashboard:
   replicas: 1
   image:
     repository: quay.io/nuclio/dashboard
-    tag: 1.4.12-amd64
+    tag: 1.4.15-amd64
     pullPolicy: IfNotPresent
   baseImagePullPolicy: IfNotPresent
   externalIPAddresses: []
@@ -92,7 +91,7 @@ autoscaler:
   replicas: 1
   image:
     repository: quay.io/nuclio/autoscaler
-    tag: 1.4.12-amd64
+    tag: 1.4.15-amd64
     pullPolicy: IfNotPresent
 
 dlx:
@@ -100,7 +99,7 @@ dlx:
   replicas: 1
   image:
     repository: quay.io/nuclio/dlx
-    tag: 1.4.12-amd64
+    tag: 1.4.15-amd64
     pullPolicy: IfNotPresent
 
 registry:

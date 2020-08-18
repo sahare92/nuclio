@@ -19,9 +19,9 @@ package controller
 import (
 	"time"
 
+	"github.com/nuclio/nuclio/pkg/platform/kube/apigatewayres"
 	nuclioioclient "github.com/nuclio/nuclio/pkg/platform/kube/client/clientset/versioned"
 	"github.com/nuclio/nuclio/pkg/platform/kube/functionres"
-	"github.com/nuclio/nuclio/pkg/platform/kube/provisioner/apigateway"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
 
 	"github.com/nuclio/errors"
@@ -36,7 +36,7 @@ type Controller struct {
 	kubeClientSet         kubernetes.Interface
 	nuclioClientSet       nuclioioclient.Interface
 	functionresClient     functionres.Client
-	apiGatewayProvisioner *apigateway.Provisioner
+	apigatewayresClient   apigatewayres.Client
 	imagePullSecrets      string
 	functionOperator      *functionOperator
 	projectOperator       *projectOperator
@@ -52,15 +52,14 @@ func NewController(parentLogger logger.Logger,
 	kubeClientSet kubernetes.Interface,
 	nuclioClientSet nuclioioclient.Interface,
 	functionresClient functionres.Client,
-	apiGatewayProvisioner *apigateway.Provisioner,
+	apigatewayresClient apigatewayres.Client,
 	resyncInterval time.Duration,
 	cronJobStaleResourcesCleanupInterval time.Duration,
 	platformConfiguration *platformconfig.Config,
 	functionOperatorNumWorkers int,
 	functionEventOperatorNumWorkers int,
 	projectOperatorNumWorkers int,
-	apiGatewayOperatorNumWorkers int,
-	apiGatewayOperatorEnabled bool) (*Controller, error) {
+	apiGatewayOperatorNumWorkers int) (*Controller, error) {
 	var err error
 
 	// replace "*" with "", which is actually "all" in kube-speak
@@ -75,7 +74,7 @@ func NewController(parentLogger logger.Logger,
 		kubeClientSet:         kubeClientSet,
 		nuclioClientSet:       nuclioClientSet,
 		functionresClient:     functionresClient,
-		apiGatewayProvisioner: apiGatewayProvisioner,
+		apigatewayresClient:   apigatewayresClient,
 		platformConfiguration: platformConfiguration,
 	}
 
@@ -118,17 +117,13 @@ func NewController(parentLogger logger.Logger,
 		return nil, errors.Wrap(err, "Failed to create project operator")
 	}
 
-	if apiGatewayOperatorEnabled {
-
-		// create an api-gateway operator
-		newController.apiGatewayOperator, err = newAPIGatewayOperator(parentLogger,
-			newController,
-			&resyncInterval,
-			apiGatewayOperatorNumWorkers)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to create api-gateway operator")
-		}
-
+	// create an api-gateway operator
+	newController.apiGatewayOperator, err = newAPIGatewayOperator(parentLogger,
+		newController,
+		&resyncInterval,
+		apiGatewayOperatorNumWorkers)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create api-gateway operator")
 	}
 
 	// create cron job monitoring
@@ -159,13 +154,9 @@ func (c *Controller) Start() error {
 		return errors.Wrap(err, "Failed to start function event operator")
 	}
 
-	// will be nil when it's disabled
-	if c.apiGatewayOperator != nil {
-
-		// start the api-gateway operator
-		if err := c.apiGatewayOperator.start(); err != nil {
-			return errors.Wrap(err, "Failed to start api-gateway operator")
-		}
+	// start the api-gateway operator
+	if err := c.apiGatewayOperator.start(); err != nil {
+		return errors.Wrap(err, "Failed to start api-gateway operator")
 	}
 
 	if c.cronJobMonitoring != nil {
