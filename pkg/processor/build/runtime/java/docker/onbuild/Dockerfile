@@ -46,7 +46,7 @@ COPY pkg/processor/build/runtime/java/docker/onbuild/build-user-handler.sh /home
 RUN chmod +x /home/gradle/src/userHandler/build-user-handler.sh
 
 # Download the SDK Jar to /home/gradle/src/userHandler
-RUN curl -L -o pkg/nuclio-sdk-java-1.0.0.jar https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
+RUN curl -L -o /home/gradle/pkg/nuclio-sdk-java-1.0.0.jar https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
 
 COPY pkg/nuclio-sdk-java-1.0.0.jar /home/gradle/src/userHandler/nuclio-sdk-java-1.0.0.jar
 
