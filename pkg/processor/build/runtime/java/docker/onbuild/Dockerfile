@@ -34,6 +34,8 @@ WORKDIR /home/gradle
 
 RUN curl -L -o /home/gradle/nuclio-sdk-java-1.0.0.jar https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
 
+RUN ls /home/gradle
+
 # Copy processor
 COPY --from=processor /home/nuclio/bin/processor /home/gradle/bin/processor
 
