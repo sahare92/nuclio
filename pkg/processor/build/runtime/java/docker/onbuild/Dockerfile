@@ -34,7 +34,7 @@ WORKDIR /home/gradle
 
 RUN curl -LO https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
 
-RUN ls /home/gradle
+RUN echo "\$PWD"
 
 # Copy processor
 COPY --from=processor /home/nuclio/bin/processor /home/gradle/bin/processor
