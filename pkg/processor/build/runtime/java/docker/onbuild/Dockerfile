@@ -46,7 +46,9 @@ COPY pkg/processor/build/runtime/java/docker/onbuild/build-user-handler.sh /home
 RUN chmod +x /home/gradle/src/userHandler/build-user-handler.sh
 
 # Download the SDK Jar to /home/gradle/src/userHandler
-RUN curl -L -o /home/gradle/src/userHandler/nuclio-sdk-java-1.0.0.jar https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
+RUN curl -LO https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
+
+RUN cp nuclio-sdk-java-1.0.0.jar /home/gradle/src/userHandler/nuclio-sdk-java-1.0.0.jar
 
 # Copy the gradle build script and user sources to /home/gradle/src/userHandler
 ONBUILD COPY handler/build.gradle /home/gradle/src/userHandler
@@ -74,10 +76,11 @@ ONBUILD RUN mv /home/gradle/src/userHandler/build/libs/user-handler.jar /home/gr
 
 # The directory will hold wrapper source, SDK jar, user-handler.jar and wrapper gradle build script
 COPY pkg/processor/runtime/java/build.gradle \
-    /home/gradle/src/userHandler/nuclio-sdk-java-1.0.0.jar \
     pkg/processor/runtime/java/docker \
     pkg/processor/build/runtime/java/docker/onbuild/build-wrapped-handler.sh \
     /home/gradle/src/wrapper/
+
+RUN cp nuclio-sdk-java-1.0.0.jar /home/gradle/src/wrapper/nuclio-sdk-java-1.0.0.jar
 
 # Download dependencies
 RUN cd /home/gradle/src/wrapper \
