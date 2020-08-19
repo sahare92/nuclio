@@ -35,7 +35,7 @@ WORKDIR /home/gradle
 # Copy processor
 COPY --from=processor /home/nuclio/bin/processor /home/gradle/bin/processor
 
-RUN curl -L -o pkg/nuclio-sdk-java-1.0.0.jar https://repo1.maven.org/fromsearch?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
+RUN curl -L -o pkg/nuclio-sdk-java-1.0.0.jar https://repo1.maven.org/fromsearch\?filepath=io/nuclio/nuclio-sdk-java/1.0.0/nuclio-sdk-java-1.0.0.jar
 
 #
 # Build user handler jar
