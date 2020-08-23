@@ -177,7 +177,37 @@ func (pr *projectResource) export(project platform.Project) restful.Attributes {
 		"project":        projectAttributes,
 		"functions":      map[string]restful.Attributes{},
 		"functionEvents": map[string]restful.Attributes{},
+		"apiGateways":    map[string]restful.Attributes{},
 	}
+
+	// get functions and function events to export
+	functionsMap, functionEventsMap := pr.getFunctionsAndFunctionEventsMap(project)
+
+	// get api-gateways to export
+	apiGatewaysMap := pr.getAPIGatewaysMap(project)
+
+	attributes["functions"] = functionsMap
+	attributes["functionEvents"] = functionEventsMap
+	attributes["apiGateways"] = apiGatewaysMap
+
+	return attributes
+}
+
+func (pr *projectResource) getAPIGatewaysMap(project platform.Project) (map[string]restful.Attributes) {
+	apiGatewaysMap := map[string]restful.Attributes{}
+
+	apiGatewaysMap, err := apiGatewayResourceInstance.GetAllByNamespace(project.GetConfig().Meta.Namespace, true)
+	if err != nil {
+		pr.Logger.WarnWith("Failed to get all api-gateways in the namespace",
+			"namespace", project.GetConfig().Meta.Namespace,
+			"err", err)
+	}
+
+	return apiGatewaysMap
+}
+
+func (pr *projectResource) getFunctionsAndFunctionEventsMap(project platform.Project) (map[string]restful.Attributes,
+	map[string]restful.Attributes){
 
 	functionsMap := map[string]restful.Attributes{}
 	functionEventsMap := map[string]restful.Attributes{}
@@ -185,13 +215,12 @@ func (pr *projectResource) export(project platform.Project) restful.Attributes {
 	getFunctionsOptions := &platform.GetFunctionsOptions{
 		Name:      "",
 		Namespace: project.GetConfig().Meta.Namespace,
-		Labels:    fmt.Sprintf("nuclio.io/project-name=%s", projectMeta.Name),
+		Labels:    fmt.Sprintf("nuclio.io/project-name=%s", project.GetConfig().Meta.Name),
 	}
 
 	functions, err := pr.getPlatform().GetFunctions(getFunctionsOptions)
-
 	if err != nil {
-		return attributes
+		return functionsMap, functionEventsMap
 	}
 
 	namespace := project.GetConfig().Meta.Namespace
@@ -207,10 +236,7 @@ func (pr *projectResource) export(project platform.Project) restful.Attributes {
 		}
 	}
 
-	attributes["functions"] = functionsMap
-	attributes["functionEvents"] = functionEventsMap
-
-	return attributes
+	return functionsMap, functionEventsMap
 }
 
 func (pr *projectResource) createProject(projectInfoInstance *projectInfo) (id string,

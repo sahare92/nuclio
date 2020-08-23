@@ -39,7 +39,6 @@ type apiGatewayInfo struct {
 
 // GetAll returns all api-gateways
 func (agr *apiGatewayResource) GetAll(request *http.Request) (map[string]restful.Attributes, error) {
-	response := map[string]restful.Attributes{}
 
 	// get namespace
 	namespace := agr.getNamespaceFromRequest(request)
@@ -47,12 +46,20 @@ func (agr *apiGatewayResource) GetAll(request *http.Request) (map[string]restful
 		return nil, nuclio.NewErrBadRequest("Namespace must exist")
 	}
 
+	exportFunction := agr.GetURLParamBoolOrDefault(request, restful.ParamExport, false)
+
+	return agr.GetAllByNamespace(namespace, exportFunction)
+}
+
+// GetAll returns all api-gateways
+func (agr *apiGatewayResource) GetAllByNamespace(namespace string, exportFunction bool) (map[string]restful.Attributes, error) {
+	response := map[string]restful.Attributes{}
+
 	apiGateways, err := agr.getPlatform().GetAPIGateways(&platform.GetAPIGatewaysOptions{Namespace: namespace})
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get api-gateways")
 	}
 
-	exportFunction := agr.GetURLParamBoolOrDefault(request, restful.ParamExport, false)
 	for _, apiGateway := range apiGateways {
 		if exportFunction {
 			response[apiGateway.GetConfig().Meta.Name] = agr.export(apiGateway)
