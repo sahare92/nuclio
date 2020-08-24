@@ -46,6 +46,7 @@ type projectImportInfo struct {
 	Project        *projectInfo
 	Functions      map[string]*functionInfo
 	FunctionEvents map[string]*functionEventInfo
+	APIGateways    map[string]*apiGatewayInfo
 }
 
 // GetAll returns all projects
@@ -312,17 +313,23 @@ func (pr *projectResource) importProject(projectImportInfoInstance *projectImpor
 
 	failedFunctions := pr.importProjectFunctions(projectImportInfoInstance, authConfig)
 	failedFunctionEvents := pr.importProjectFunctionEvents(projectImportInfoInstance, failedFunctions)
+	failedAPIGateways := pr.importProjectAPIGateways(projectImportInfoInstance, failedFunctions)
 
 	attributes = restful.Attributes{
 		"functionImportResult": restful.Attributes{
-			"createdAmount":   len(projectImportInfoInstance.Functions) - len(failedFunctions),
-			"failedAmount":    len(failedFunctions),
-			"failedFunctions": failedFunctions,
+			"createdAmount":    len(projectImportInfoInstance.Functions) - len(failedFunctions),
+			"failedAmount":     len(failedFunctions),
+			"failedFunctions":  failedFunctions,
 		},
 		"functionEventImportResult": restful.Attributes{
-			"createdAmount":        len(projectImportInfoInstance.FunctionEvents) - len(failedFunctionEvents),
-			"failedAmount":         len(failedFunctionEvents),
-			"failedFunctionEvents": failedFunctionEvents,
+			"createdAmount":         len(projectImportInfoInstance.FunctionEvents) - len(failedFunctionEvents),
+			"failedAmount":          len(failedFunctionEvents),
+			"failedFunctionEvents":  failedFunctionEvents,
+		},
+		"apiGatewaysImportResult":  restful.Attributes{
+			"createdAmount":        len(projectImportInfoInstance.APIGateways) - len(failedAPIGateways),
+			"failedAmount":         len(failedAPIGateways),
+			"failedFunctionEvents": failedAPIGateways,
 		},
 	}
 
@@ -396,6 +403,79 @@ func (pr *projectResource) importFunction(function *functionInfo, authConfig *pl
 	}
 
 	return nil
+}
+
+func (pr *projectResource) importProjectAPIGateways(projectImportInfoInstance *projectImportInfo,
+	failedFunctions []restful.Attributes) []restful.Attributes {
+
+	var failedAPIGateways []restful.Attributes
+
+	creationErrorContainsFunction := func(functionName string) bool {
+		for _, functionCreationError := range failedFunctions {
+			if functionCreationError["function"] == functionName {
+				return true
+			}
+		}
+		return false
+	}
+
+	// iterate over all api gateways and try to create each
+	for _, apiGateway := range projectImportInfoInstance.APIGateways {
+
+		// innocent until proven guilty
+		isValidAPIGateway := true
+
+		// validate upstreams
+		for _, upstream := range apiGateway.Spec.Upstreams {
+
+			// validate upstream kind
+			if upstream.Kind != platform.APIGatewayUpstreamKindNuclioFunction {
+				failedAPIGateways = append(failedAPIGateways, restful.Attributes{
+					"apiGateway": apiGateway.Spec.Name,
+					"error":      fmt.Sprintf("Unsupported api gateway upstream kind: %s", upstream.Kind),
+				})
+
+				isValidAPIGateway = false
+				break
+			}
+
+			// validate nucliofunciton spec is present
+			if upstream.Nucliofunction == nil {
+				failedAPIGateways = append(failedAPIGateways, restful.Attributes{
+					"apiGateway": apiGateway.Spec.Name,
+					"error":      "Upstream must contain nuclio function",
+				})
+
+				isValidAPIGateway = false
+				break
+			}
+
+			// validate upstream function is not one the functions that failed import
+			functionName := upstream.Nucliofunction.Name
+			if creationErrorContainsFunction(functionName) {
+				failedAPIGateways = append(failedAPIGateways, restful.Attributes{
+					"functionEvent": apiGateway.Spec.Name,
+					"error":         fmt.Sprintf("Api gateway belongs to function that failed import: %s", functionName),
+				})
+
+				isValidAPIGateway = false
+				break
+			}
+		}
+
+		// if it is a valid api gateway - create it
+		if isValidAPIGateway {
+			_, _, err := apiGatewayResourceInstance.createAPIGateway(apiGateway)
+			if err != nil {
+				failedAPIGateways = append(failedAPIGateways, restful.Attributes{
+					"apiGateway": apiGateway.Spec.Name,
+					"error":      err.Error(),
+				})
+			}
+		}
+	}
+
+	return failedAPIGateways
 }
 
 func (pr *projectResource) importProjectFunctionEvents(projectImportInfoInstance *projectImportInfo,
