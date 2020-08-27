@@ -96,6 +96,9 @@ func (ago *apiGatewayOperator) CreateOrUpdate(ctx context.Context, object runtim
 	}
 
 	// set default project-name if none given
+	if apiGateway.Labels == nil {
+		apiGateway.Labels = map[string]string{}
+	}
 	if apiGateway.Labels["nuclio.io/project-name"] == "" {
 		apiGateway.Labels["nuclio.io/project-name"] = "default"
 	}

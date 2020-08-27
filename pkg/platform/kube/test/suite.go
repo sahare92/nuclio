@@ -39,9 +39,10 @@ import (
 
 type KubeTestSuite struct {
 	processorsuite.TestSuite
-	CmdRunner   cmdrunner.CmdRunner
-	RegistryURL string
-	Controller  *controller.Controller
+	CmdRunner          cmdrunner.CmdRunner
+	RegistryURL        string
+	DefaultIngressHost string
+	Controller         *controller.Controller
 }
 
 func (suite *KubeTestSuite) SetupSuite() {
@@ -62,6 +63,9 @@ func (suite *KubeTestSuite) SetupSuite() {
 	suite.TestSuite.SetupSuite()
 
 	suite.RegistryURL = common.GetEnvOrDefaultString("NUCLIO_TEST_REGISTRY_URL", "localhost:5000")
+
+	// use docker-for-mac/minikube kubernetes default host (as it is set by default on "/etc/host")
+	suite.DefaultIngressHost = common.GetEnvOrDefaultString("NUCLIO_DEFAULT_INGRESS_HOST", "kubernetes.docker.internal")
 
 	suite.CmdRunner, err = cmdrunner.NewShellRunner(suite.Logger)
 	suite.Require().NoError(err, "Failed to create shell runner")
@@ -148,9 +152,25 @@ func (suite *KubeTestSuite) compileCreateFunctionOptions(functionName string) *p
 			},
 		},
 	}
-	createFunctionOptions.FunctionConfig.Meta.Namespace = suite.Namespace
-	createFunctionOptions.FunctionConfig.Spec.Build.Registry = suite.RegistryURL
+
 	return createFunctionOptions
+}
+
+func (suite *KubeTestSuite) compileCreateAPIGatewayOptions(apiGatewayName string) *platform.CreateAPIGatewayOptions {
+	createAPIGatewayOptions:= &platform.CreateAPIGatewayOptions{
+		APIGatewayConfig: platform.APIGatewayConfig{
+			Meta: platform.APIGatewayMeta{
+				Name: apiGatewayName,
+				Namespace: suite.Namespace,
+			},
+			Spec: platform.APIGatewaySpec{
+				Name: apiGatewayName,
+				Host: suite.DefaultIngressHost,
+			},
+		},
+	}
+
+	return createAPIGatewayOptions
 }
 
 func (suite *KubeTestSuite) createController() *controller.Controller {

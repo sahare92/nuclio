@@ -18,8 +18,13 @@ package test
 
 import (
 	"encoding/base64"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platform/kube"
@@ -239,9 +244,185 @@ def handler(context, event):
 	return createFunctionOptions
 }
 
+
+type APIGatewayTestSuite struct {
+	KubeTestSuite
+}
+
+func (suite *APIGatewayTestSuite) SetupSuite() {
+	suite.KubeTestSuite.SetupSuite()
+
+	// start controller in background
+	go suite.Controller.Start() // nolint: errcheck
+}
+
+func (suite *APIGatewayTestSuite) TestCreate() {
+	createFunctionOptions := suite.compileCreateFunctionOptions("test-api-gateway-func")
+
+	functionSourceCode := base64.StdEncoding.EncodeToString([]byte(`def handler(context, event):
+    return "expected response"
+`))
+	createFunctionOptions.FunctionConfig.Spec.Handler = "main:handler"
+	createFunctionOptions.FunctionConfig.Spec.Runtime = "python:3.6"
+	createFunctionOptions.FunctionConfig.Spec.Build.FunctionSourceCode = functionSourceCode
+
+	// after the function is created, create the api gateway with it as its primary upstream
+	afterFirstDeploy := func(deployResult *platform.CreateFunctionResult) bool {
+
+		// get the function
+		functions, err := suite.Platform.GetFunctions(&platform.GetFunctionsOptions{
+			Name:      createFunctionOptions.FunctionConfig.Meta.Name,
+			Namespace: createFunctionOptions.FunctionConfig.Meta.Namespace,
+		})
+		suite.Require().NoError(err)
+
+		suite.Require().Lenf(functions, 1, "Unexpected amount of functions. actual: %s, expected: %s", len(functions), 1)
+
+		function := functions[0]
+
+		createAPIGatewayConfig := suite.compileCreateAPIGatewayOptions("test-api-gateway")
+		createAPIGatewayConfig.APIGatewayConfig.Spec.Path = "/pathy"
+		createAPIGatewayConfig.APIGatewayConfig.Spec.Upstreams = []platform.APIGatewayUpstreamSpec{
+			{
+				Kind: platform.APIGatewayUpstreamKindNuclioFunction,
+				Nucliofunction: &platform.NuclioFunctionAPIGatewaySpec{
+					Name: function.GetConfig().Meta.Name,
+				},
+			},
+		}
+
+
+
+		err = suite.Platform.CreateAPIGateway(createAPIGatewayConfig)
+		suite.Require().NoError(err)
+
+		defer suite.Platform.DeleteAPIGateway(&platform.DeleteAPIGatewayOptions{ // nolint: errcheck
+			Meta: platform.APIGatewayMeta{
+				Name: createAPIGatewayConfig.APIGatewayConfig.Meta.Name,
+				Namespace: createAPIGatewayConfig.APIGatewayConfig.Meta.Namespace,
+			},
+		})
+
+		// invoke the api-gateway URL to make sure it works (we get the expected function response)
+		err = common.RetryUntilSuccessful(20 * time.Second, 1 * time.Second, func() bool {
+			apiGatewayURL := fmt.Sprintf("http://%s%s",
+				createAPIGatewayConfig.APIGatewayConfig.Spec.Host,
+				createAPIGatewayConfig.APIGatewayConfig.Spec.Path)
+			resp, err := http.Get(apiGatewayURL)
+			if err != nil {
+				suite.Logger.WarnWith("Failed while sending http /GET request to api gateway URL",
+					"apiGatewayURL", apiGatewayURL,
+					"err", err)
+				return false
+			}
+
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				suite.Logger.WarnWith("Failed while reading api gateway response body",
+					"apiGatewayURL", apiGatewayURL,
+					"err", err)
+				return false
+			}
+
+			if string(body) != "expected response" {
+				suite.Logger.WarnWith("Got unexpected response from api gateway",
+					"apiGatewayURL", apiGatewayURL,
+					"body", string(body))
+				return false
+			}
+
+			suite.Logger.DebugWith("Got expected response",
+				"body", string(body))
+
+			return true
+		})
+		suite.Require().NoError(err)
+
+		return true
+	}
+
+	suite.DeployFunction(createFunctionOptions, afterFirstDeploy)
+}
+
+func (suite *APIGatewayTestSuite) TestDelete() {
+	createFunctionOptions := suite.compileCreateFunctionOptions("test-api-gateway-func")
+
+	functionSourceCode := base64.StdEncoding.EncodeToString([]byte(`def handler(context, event):
+    return "expected response"
+`))
+	createFunctionOptions.FunctionConfig.Spec.Handler = "main:handler"
+	createFunctionOptions.FunctionConfig.Spec.Runtime = "python:3.6"
+	createFunctionOptions.FunctionConfig.Spec.Build.FunctionSourceCode = functionSourceCode
+
+	// after the function is created, create the api gateway with it as its primary upstream
+	afterFirstDeploy := func(deployResult *platform.CreateFunctionResult) bool {
+
+		// get the function
+		functions, err := suite.Platform.GetFunctions(&platform.GetFunctionsOptions{
+			Name:      createFunctionOptions.FunctionConfig.Meta.Name,
+			Namespace: createFunctionOptions.FunctionConfig.Meta.Namespace,
+		})
+		suite.Require().NoError(err)
+
+		suite.Require().Lenf(functions, 1, "Unexpected amount of functions. actual: %s, expected: %s", len(functions), 1)
+
+		function := functions[0]
+
+		createAPIGatewayConfig := suite.compileCreateAPIGatewayOptions("test-api-gateway")
+		createAPIGatewayConfig.APIGatewayConfig.Spec.Upstreams = []platform.APIGatewayUpstreamSpec{
+			{
+				Kind: platform.APIGatewayUpstreamKindNuclioFunction,
+				Nucliofunction: &platform.NuclioFunctionAPIGatewaySpec{
+					Name: function.GetConfig().Meta.Name,
+				},
+			},
+		}
+
+		suite.Logger.Debug("Creating api gateway")
+		err = suite.Platform.CreateAPIGateway(createAPIGatewayConfig)
+		suite.Require().NoError(err)
+
+		suite.Logger.Debug("Deleting api gateway")
+		err = suite.Platform.DeleteAPIGateway(&platform.DeleteAPIGatewayOptions{
+			Meta: platform.APIGatewayMeta{
+				Name: createAPIGatewayConfig.APIGatewayConfig.Meta.Name,
+				Namespace: createAPIGatewayConfig.APIGatewayConfig.Meta.Namespace,
+			},
+		})
+		suite.Require().NoError(err)
+
+		// validate the api-gateway is successfully deleted as expected
+		err = common.RetryUntilSuccessful(20 * time.Second, 1 * time.Second, func() bool {
+			apiGateways, err := suite.Platform.GetAPIGateways(&platform.GetAPIGatewaysOptions{
+				Name: createAPIGatewayConfig.APIGatewayConfig.Meta.Name,
+				Namespace: createAPIGatewayConfig.APIGatewayConfig.Meta.Namespace,
+			})
+			if err != nil {
+				suite.Logger.WarnWith("Failed to get api gateways. Retrying", "err", err)
+				return false
+			}
+
+			if len(apiGateways) > 0 {
+				suite.Logger.WarnWith("Api gateway still exists. Retrying")
+				return false
+			}
+
+			suite.Logger.Debug("Api gateway was successfully deleted")
+			return true
+		})
+		suite.Require().NoError(err)
+
+		return true
+	}
+
+	suite.DeployFunction(createFunctionOptions, afterFirstDeploy)
+}
+
 func TestPlatformTestSuite(t *testing.T) {
 	if testing.Short() {
 		return
 	}
+	suite.Run(t, new(APIGatewayTestSuite))
 	suite.Run(t, new(DeployFunctionTestSuite))
 }

@@ -268,6 +268,11 @@ func (lc *lazyClient) generateNginxIngress(ctx context.Context,
 		RewriteTarget: upstream.RewriteTarget,
 	}
 
+	// if no authentication mode was given, set it to none by default
+	if string(apiGateway.Spec.AuthenticationMode) == "" {
+		apiGateway.Spec.AuthenticationMode = ingress.AuthenticationModeNone
+	}
+
 	switch apiGateway.Spec.AuthenticationMode {
 	case ingress.AuthenticationModeNone:
 		commonIngressSpec.AuthenticationMode = ingress.AuthenticationModeNone
