@@ -1095,6 +1095,9 @@ func (p *Platform) validateAPIGatewayAuthMode(apiGateway *nuclioio.NuclioAPIGate
 	if err != nil {
 		return errors.Wrap(err, "Failed getting allowed authentication modes")
 	}
+
+	p.Logger.InfoWith("Got allowed auth modes", "allowedAuthenticationModes", allowedAuthenticationModes)
+
 	if common.StringInSlice(string(apiGateway.Spec.AuthenticationMode), allowedAuthenticationModes) {
 		return nuclio.NewErrBadRequest("Api gateway authentication mode not allowed")
 	}
