@@ -342,7 +342,7 @@ func (p *Platform) GetFunctions(getFunctionsOptions *platform.GetFunctionsOption
 	p.EnrichFunctionsWithDeployLogStream(functions)
 
 	if err = p.enrichFunctionsWithAPIGateways(functions, getFunctionsOptions.Namespace); err != nil {
-		p.Logger.InfoWith("test message", "err", errors.RootCause(err).Error())
+
 		// relevant when upgrading nuclio from a version that didn't have api-gateways to one that has
 		if !strings.Contains(errors.RootCause(err).Error(), "the server could not find the requested resource (get nuclioapigateways.nuclio.io)") {
 			return nil, errors.Wrap(err, "Failed to enrich functions with api gateways")
