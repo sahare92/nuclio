@@ -251,7 +251,9 @@ func (lc *lazyClient) generateNginxIngress(ctx context.Context,
 	}
 
 	switch apiGateway.Spec.AuthenticationMode {
-	case ingress.AuthenticationModeNone:
+	case ingress.AuthenticationModeNone, ingress.AuthenticationModeEmpty:
+
+		// default to none when no authentication mode is passed
 		commonIngressSpec.AuthenticationMode = ingress.AuthenticationModeNone
 	case ingress.AuthenticationModeBasicAuth:
 		if apiGateway.Spec.Authentication == nil || apiGateway.Spec.Authentication.BasicAuth == nil {

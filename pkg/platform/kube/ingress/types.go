@@ -40,6 +40,7 @@ type DexAuth struct {
 type AuthenticationMode string
 
 const (
+	AuthenticationModeEmpty     AuthenticationMode = ""
 	AuthenticationModeNone      AuthenticationMode = "none"
 	AuthenticationModeBasicAuth AuthenticationMode = "basicAuth"
 	AuthenticationModeAccessKey AuthenticationMode = "accessKey"
