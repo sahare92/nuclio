@@ -167,7 +167,7 @@ func (ago *apiGatewayOperator) setAPIGatewayState(apiGateway *nuclioio.NuclioAPI
 
 	// if a last error was passed, set it
 	if lastError != nil {
-		apiGateway.Status.LastError = lastError.Error()
+		apiGateway.Status.LastError = errors.RootCause(lastError).Error()
 	}
 
 	// try to update the api gateway with the new state
