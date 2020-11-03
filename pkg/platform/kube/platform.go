@@ -1135,6 +1135,10 @@ func (p *Platform) validateFunctionHasNoAPIGateways(deleteFunctionOptions *platf
 		return errors.Wrap(err, "Failed to get function to api gateways mapping")
 	}
 
+	p.Logger.InfoWith("test",
+		"functionToAPIGateways", functionToAPIGateways,
+		"function-name", deleteFunctionOptions.FunctionConfig.Meta.Name)
+
 	if len(functionToAPIGateways[deleteFunctionOptions.FunctionConfig.Meta.Name]) > 0 {
 		return errors.Wrap(err, "Function is used by api gateways")
 	}
