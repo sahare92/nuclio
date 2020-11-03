@@ -335,14 +335,14 @@ func (fr *functionResource) deleteFunction(request *http.Request) (*restful.Cust
 		return &restful.CustomRouteFuncResponse{
 			Single:     true,
 			StatusCode: http.StatusInternalServerError,
-		}, err
+		}, errors.RootCause(err)
 	}
 
 	return &restful.CustomRouteFuncResponse{
 		ResourceType: "function",
 		Single:       true,
 		StatusCode:   http.StatusNoContent,
-	}, err
+	}, errors.RootCause(err)
 }
 
 func (fr *functionResource) functionToAttributes(function platform.Function) restful.Attributes {

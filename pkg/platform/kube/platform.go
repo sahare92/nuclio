@@ -370,7 +370,6 @@ func (p *Platform) UpdateFunction(updateFunctionOptions *platform.UpdateFunction
 // DeleteFunction will delete a previously deployed function
 func (p *Platform) DeleteFunction(deleteFunctionOptions *platform.DeleteFunctionOptions) error {
 	if err := p.validateFunctionHasNoAPIGateways(deleteFunctionOptions); err != nil {
-		p.Logger.Info("test   2")
 		return errors.Wrap(err, "Failed while validating function has no api gateways")
 	}
 
@@ -1136,15 +1135,8 @@ func (p *Platform) validateFunctionHasNoAPIGateways(deleteFunctionOptions *platf
 		return errors.Wrap(err, "Failed to get function to api gateways mapping")
 	}
 
-	p.Logger.InfoWith("test",
-		"functionToAPIGateways", functionToAPIGateways,
-		"function-name", deleteFunctionOptions.FunctionConfig.Meta.Name,
-		"agws", functionToAPIGateways[deleteFunctionOptions.FunctionConfig.Meta.Name],
-		"length", len(functionToAPIGateways[deleteFunctionOptions.FunctionConfig.Meta.Name]))
-
 	if len(functionToAPIGateways[deleteFunctionOptions.FunctionConfig.Meta.Name]) > 0 {
-		p.Logger.Info("test   1")
-		return errors.New("Function is used by api gateways")
+		return nuclio.NewErrConflict("Function is used by api gateways")
 	}
 
 	return nil
