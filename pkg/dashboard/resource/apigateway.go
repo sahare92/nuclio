@@ -123,6 +123,7 @@ func (agr *apiGatewayResource) Create(request *http.Request) (id string, attribu
 			responseErr = errors.RootCause(responseErr)
 		}
 
+		agr.Logger.WarnWith("got error", "error", responseErr, "rootCause", errors.RootCause(responseErr))
 		return
 	}
 
