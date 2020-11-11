@@ -123,7 +123,7 @@ func (agr *apiGatewayResource) Create(request *http.Request) (id string, attribu
 			responseErr = errors.RootCause(responseErr)
 		}
 
-		agr.Logger.WarnWith("got error", "error", responseErr, "rootCause", errors.RootCause(responseErr))
+		agr.Logger.WarnWith("got error", "error", responseErr, "rootCause", errors.RootCause(responseErr), "rootError", errors.RootCause(responseErr).Error())
 		return
 	}
 
@@ -329,7 +329,7 @@ func (agr *apiGatewayResource) getAPIGatewayInfoFromRequest(request *http.Reques
 		specRequired,
 		request.Header.Get("x-nuclio-project-name")); err != nil {
 
-		return nil, nuclio.WrapErrBadRequest(errors.Wrap(err, "Failed to process api gateway info"))
+		return nil, errors.Wrap(err, "Failed to process api gateway info")
 	}
 
 	return &apiGatewayInfoInstance, nil
@@ -372,8 +372,7 @@ func (agr *apiGatewayResource) processAPIGatewayInfo(apiGatewayInfoInstance *api
 	// ensure spec exists if it's required
 	if apiGatewayInfoInstance.Spec == nil {
 		if specRequired {
-			err = errors.New("Api gateway spec must be provided")
-			return nuclio.WrapErrBadRequest(err)
+			return nuclio.NewErrBadRequest("Api gateway spec must be provided")
 		}
 
 		apiGatewayInfoInstance.Spec = &platform.APIGatewaySpec{}
