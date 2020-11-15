@@ -899,8 +899,17 @@ func (ap *Platform) validateTriggers(createFunctionOptions *platform.CreateFunct
 
 		// validate ingresses structure correctness (when it exists)
 		if encodedIngresses, found := _trigger.Attributes["ingresses"]; found {
-			if _, validStructure := encodedIngresses.(map[string]interface{}); !validStructure {
-				return nuclio.NewErrBadRequest(fmt.Sprintf("Malformed ingresses format for trigger %s", triggerName))
+			encodedIngresses, validStructure := encodedIngresses.(map[string]interface{})
+			if !validStructure {
+				return nuclio.NewErrBadRequest(fmt.Sprintf("Malformed ingresses format for trigger %s (expects a map)", triggerName))
+			}
+
+			// validate each ingress has a valid format
+			for ingressName, ingress := range encodedIngresses {
+				if _, validStructure := ingress.(map[string]interface{}); !validStructure {
+					return nuclio.NewErrBadRequest(
+						fmt.Sprintf("Malformed format for ingress %s in trigger %s", ingressName, triggerName))
+				}
 			}
 		}
 
