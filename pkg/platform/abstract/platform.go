@@ -894,9 +894,15 @@ func (ap *Platform) validateProjectExists(createFunctionOptions *platform.Create
 }
 
 func (ap *Platform) validateTriggers(createFunctionOptions *platform.CreateFunctionOptions) error {
-
 	var httpTriggerExists bool
 	for triggerName, _trigger := range createFunctionOptions.FunctionConfig.Spec.Triggers {
+
+		// validate ingresses structure correctness (when it exists)
+		if encodedIngresses, found := _trigger.Attributes["ingresses"]; found {
+			if _, validStructure := encodedIngresses.(map[string]interface{}); !validStructure {
+				return nuclio.NewErrBadRequest(fmt.Sprintf("Malformed ingresses format for trigger %s", triggerName))
+			}
+		}
 
 		// no more workers than limitation allows
 		if _trigger.MaxWorkers > trigger.MaxWorkersLimit {
