@@ -895,24 +895,24 @@ func (ap *Platform) validateProjectExists(createFunctionOptions *platform.Create
 
 func (ap *Platform) validateTriggers(createFunctionOptions *platform.CreateFunctionOptions) error {
 	var httpTriggerExists bool
-	ap.Logger.InfoWith("got here 1", "triggers", createFunctionOptions.FunctionConfig.Spec.Triggers)
+	ap.Logger.InfoWith("got here 1")
 	for triggerName, _trigger := range createFunctionOptions.FunctionConfig.Spec.Triggers {
-		ap.Logger.InfoWith("got here 2", "triggerName", triggerName, "trigger", _trigger)
+		ap.Logger.InfoWith("got here 2", "triggerName", triggerName)
 		// validate ingresses structure correctness (when it exists)
 		if encodedIngresses, found := _trigger.Attributes["ingresses"]; found {
-			ap.Logger.InfoWith("got here 3", "encodedIngresses", encodedIngresses)
+			ap.Logger.InfoWith("got here 3")
 			parsedIngresses, validStructure := encodedIngresses.(map[string]interface{})
 			if !validStructure {
-				return nuclio.NewErrBadRequest(fmt.Sprintf("Malformed ingresses format for trigger %s (expects a map)", triggerName))
+				return nuclio.NewErrBadRequest(fmt.Sprintf("Malformed ingresses format for trigger '%s' (expects a map)", triggerName))
 			}
 			ap.Logger.InfoWith("got here 4")
 			// validate each ingress has a valid format
 			for ingressName, ingress := range parsedIngresses {
-				ap.Logger.InfoWith("got here 5", "ingressName", ingressName, "ingress", ingress)
+				ap.Logger.InfoWith("got here 5", "ingressName", ingressName)
 				if _, validStructure := ingress.(map[string]interface{}); !validStructure {
 					ap.Logger.InfoWith("got here 6")
 					return nuclio.NewErrBadRequest(
-						fmt.Sprintf("Malformed format for ingress %s in trigger %s", ingressName, triggerName))
+						fmt.Sprintf("Malformed format for ingress '%s' in trigger '%s'", ingressName, triggerName))
 				}
 			}
 		}

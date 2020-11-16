@@ -33,13 +33,89 @@ import (
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type DeployFunctionTestSuite struct {
 	KubeTestSuite
+}
+
+func (suite *DeployFunctionTestSuite) TestFailOnMalformedTriggers() {
+	createFunctionOptions := suite.CompileCreateFunctionOptions("resource-schema")
+//	triggers := `myHttpTrigger:
+//  attributes:
+//    cors:
+//      allowMethods:
+//      - GET
+//      - PATCH
+//      - OPTIONS
+//      - POST
+//      allowOrigins:
+//      - '*'
+//      enabled: true
+//    ingresses:
+//      '0':
+//        host: cors-func-qzeu.default-tenant.app.dev72.lab.iguazeng.com
+//        paths:
+//        - /
+//        secretName: presto-tls
+//  kind: http
+//`
+//	triggers := `httptrig:
+//  name: httptrig
+//  kind: http
+//  class: ""
+//  maxWorkers: 1
+//  attributes:
+//    jobBackoffLimit: 0
+//    ingresses:
+//      "0":
+//        paths:
+//          - /
+//        host: adladsads-default.default-tenant.app.dev77.lab.iguazeng.com
+//      "1":
+//        paths:
+//          - /asdasddas
+//        host: adladsads-default.default-tenant.app.dev77.lab.iguazeng.com
+//    port: 0
+//    serviceType: ClusterIP
+//    numContainerWorkers: 0
+//    readBatchSize: 0
+//    pollingIntervalMs: 0
+//    fetchDefault: 0
+//    intervalMs: 0
+//    maxBatchSize: 0
+//    maxBatchWaitMs: 0
+//    protocolVersion: 0
+//  disabled: false`
+//      //serviceType: ClusterIP
+//	err := yaml.Unmarshal([]byte(triggers), &createFunctionOptions.FunctionConfig.Spec.Triggers)
+//	suite.Assert().NoError(err)
+
+	createFunctionOptions.FunctionConfig.Spec.Triggers = map[string]functionconfig.Trigger{
+		"httptrig": {
+			Attributes: map[string]interface{}{
+				"ingresses": map[string]interface{}{
+					"0": map[string]interface{}{
+						"host": "adladsads-default.default-tenant.app.dev77.lab.iguazeng.com",
+						"paths": []string{
+							"/",
+						},
+					},
+					"serviceType": "ClusterIP",
+				},
+			},
+			Name: "httptrig",
+			Kind: "http",
+		},
+	}
+
+	suite.DeployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
+		suite.Logger.InfoWith("triggers", "trig", createFunctionOptions.FunctionConfig.Spec.Triggers)
+		return true
+	})
 }
 
 func (suite *DeployFunctionTestSuite) TestStaleResourceVersion() {

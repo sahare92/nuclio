@@ -2,6 +2,7 @@ package abstract
 
 import (
 	"bufio"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path"
@@ -87,6 +88,52 @@ func (suite *TestAbstractSuite) SetupSuite() {
 
 func (suite *TestAbstractSuite) SetupTest() {
 	suite.TestID = xid.New().String()
+}
+
+func (suite *TestAbstractSuite) TestValidateAndEnrichTriggers() {
+	functionConfig := *functionconfig.NewConfig()
+
+	createFunctionOptions := &platform.CreateFunctionOptions{
+		Logger:         suite.Logger,
+		FunctionConfig: functionConfig,
+	}
+	createFunctionOptions.FunctionConfig.Meta.Name = "f1"
+	createFunctionOptions.FunctionConfig.Meta.Labels = map[string]string{
+		"nuclio.io/project-name": platform.DefaultProjectName,
+	}
+
+	triggers := `myHttpTrigger:
+  attributes:
+    cors:
+      allowMethods:
+      - GET
+      - PATCH
+      - OPTIONS
+      - POST
+      allowOrigins:
+      - '*'
+      enabled: true
+    ingresses:
+      '0':
+        host: cors-func-qzeu.default-tenant.app.dev72.lab.iguazeng.com
+        paths:
+        - /
+        secretName: presto-tls
+      serviceType: ClusterIP
+  kind: http
+`
+	err := yaml.Unmarshal([]byte(triggers), &createFunctionOptions.FunctionConfig.Spec.Triggers)
+	suite.Assert().NoError(err)
+
+	err = suite.Platform.EnrichCreateFunctionOptions(createFunctionOptions)
+	suite.Assert().NoError(err)
+
+	//err = suite.Platform.enrichHTTPTriggersWithServiceType(createFunctionOptions)
+	//suite.Assert().NoError(err)
+
+	err = suite.Platform.ValidateCreateFunctionOptions(createFunctionOptions)
+	suite.Assert().NoError(err)
+
 }
 
 // Test function with invalid min max replicas
