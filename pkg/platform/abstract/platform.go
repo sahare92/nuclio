@@ -895,7 +895,7 @@ func (ap *Platform) validateProjectExists(createFunctionOptions *platform.Create
 
 func (ap *Platform) validateTriggers(createFunctionOptions *platform.CreateFunctionOptions) error {
 	var httpTriggerExists bool
-	ap.Logger.InfoWith("got here 1")
+	ap.Logger.InfoWith("got here 1", "triggers", createFunctionOptions.FunctionConfig.Spec.Triggers)
 	for triggerName, _trigger := range createFunctionOptions.FunctionConfig.Spec.Triggers {
 		ap.Logger.InfoWith("got here 2", "triggerName", triggerName, "trigger", _trigger)
 		// validate ingresses structure correctness (when it exists)
