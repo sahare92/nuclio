@@ -36,6 +36,7 @@ import (
 	"github.com/nuclio/nuclio/pkg/platformconfig"
 	"github.com/nuclio/nuclio/pkg/processor"
 	"github.com/nuclio/nuclio/pkg/processor/config"
+	"github.com/nuclio/nuclio/pkg/processor/trigger"
 	"github.com/nuclio/nuclio/pkg/processor/trigger/cron"
 
 	"github.com/aws/aws-sdk-go/private/util"
@@ -44,6 +45,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/nuclio/errors"
 	"github.com/nuclio/logger"
+	"github.com/nuclio/nuclio-sdk-go"
 	"github.com/v3io/version-go"
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
@@ -193,6 +195,10 @@ func (lc *lazyClient) CreateOrUpdate(ctx context.Context, function *nuclioio.Nuc
 				return nil, errors.Wrap(err, "Failed to join augmented function config into target function")
 			}
 		}
+	}
+
+	if err := lc.validateFunction(function); err != nil {
+		return nil, errors.Wrap(err, "Failed on function validation")
 	}
 
 	// create or update the applicable configMap
@@ -591,6 +597,51 @@ func (lc *lazyClient) createOrUpdateResource(resourceName string,
 		lc.logger.DebugWith("Resource updated", "name", resourceName)
 		return resource, nil
 	}
+}
+
+func (lc *lazyClient) validateFunction(function *nuclioio.NuclioFunction) error {
+	var httpTriggerExists bool
+	lc.logger.InfoWith("got here 1")
+	for triggerName, _trigger := range function.Spec.Triggers {
+		lc.logger.InfoWith("got here 2", "triggerName", triggerName)
+		// validate ingresses structure correctness (when it exists)
+		if encodedIngresses, found := _trigger.Attributes["ingresses"]; found {
+			lc.logger.InfoWith("got here 3")
+			parsedIngresses, validStructure := encodedIngresses.(map[string]interface{})
+			if !validStructure {
+				return nuclio.NewErrBadRequest(fmt.Sprintf("Malformed ingresses format for trigger '%s' (expects a map)", triggerName))
+			}
+			lc.logger.InfoWith("got here 4")
+			// validate each ingress has a valid format
+			for ingressName, ingress := range parsedIngresses {
+				lc.logger.InfoWith("got here 5", "ingressName", ingressName)
+				if _, validStructure := ingress.(map[string]interface{}); !validStructure {
+					lc.logger.InfoWith("got here 6")
+					return nuclio.NewErrBadRequest(
+						fmt.Sprintf("Malformed format for ingress '%s' in trigger '%s'", ingressName, triggerName))
+				}
+			}
+		}
+
+		// no more workers than limitation allows
+		if _trigger.MaxWorkers > trigger.MaxWorkersLimit {
+			return errors.Errorf("MaxWorkers value for %s trigger (%d) exceeds the limit of %d",
+				triggerName,
+				_trigger.MaxWorkers,
+				trigger.MaxWorkersLimit)
+		}
+
+		// no more than one http trigger is allowed
+		if _trigger.Kind == "http" {
+			if !httpTriggerExists {
+				httpTriggerExists = true
+				continue
+			}
+			return errors.New("There's more than one http trigger (unsupported)")
+		}
+	}
+
+	return nil
 }
 
 func (lc *lazyClient) createOrUpdateConfigMap(function *nuclioio.NuclioFunction) (*v1.ConfigMap, error) {

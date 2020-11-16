@@ -934,6 +934,7 @@ func (ap *Platform) validateTriggers(createFunctionOptions *platform.CreateFunct
 			return errors.New("There's more than one http trigger (unsupported)")
 		}
 	}
+
 	return nil
 }
 
