@@ -140,6 +140,8 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	// replace logger
 	createFunctionOptions.Logger = logStream.GetLogger()
 
+	p.Logger.InfoWith("logging triggers", "triggers", createFunctionOptions.FunctionConfig.Spec.Triggers)
+
 	if err := p.EnrichCreateFunctionOptions(createFunctionOptions); err != nil {
 		return nil, errors.Wrap(err, "Create function options enrichment failed")
 	}
