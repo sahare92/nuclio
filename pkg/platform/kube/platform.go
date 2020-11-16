@@ -272,6 +272,12 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 
 	// called after function was built
 	onAfterBuild := func(buildResult *platform.CreateFunctionBuildResult, buildErr error) (*platform.CreateFunctionResult, error) {
+
+		// validate again after build (in case function spec was modified during build, because of external code entry type for example)
+		if err := p.ValidateCreateFunctionOptions(createFunctionOptions); err != nil {
+			return nil, errors.Wrap(err, "Create function options validation failed")
+		}
+
 		p.Logger.InfoWith("logging triggers", "triggers 3", createFunctionOptions.FunctionConfig.Spec.Triggers)
 		skipDeploy := functionconfig.ShouldSkipDeploy(createFunctionOptions.FunctionConfig.Meta.Annotations)
 
