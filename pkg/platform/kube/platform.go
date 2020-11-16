@@ -140,7 +140,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	// replace logger
 	createFunctionOptions.Logger = logStream.GetLogger()
 
-	p.Logger.InfoWith("logging triggers", "triggers", createFunctionOptions.FunctionConfig.Spec.Triggers)
+	p.Logger.InfoWith("logging triggers", "triggers 0", createFunctionOptions.FunctionConfig.Spec.Triggers)
 
 	if err := p.EnrichCreateFunctionOptions(createFunctionOptions); err != nil {
 		return nil, errors.Wrap(err, "Create function options enrichment failed")
@@ -169,11 +169,15 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		}
 	}
 
+	p.Logger.InfoWith("logging triggers", "triggers 1", createFunctionOptions.FunctionConfig.Spec.Triggers)
+
 	// if function exists, perform some validation with new function create options
 	if err := p.ValidateCreateFunctionOptionsAgainstExistingFunctionConfig(existingFunctionConfig,
 		createFunctionOptions); err != nil {
 		return nil, errors.Wrap(err, "Validation against existing function config failed")
 	}
+
+	p.Logger.InfoWith("logging triggers", "triggers 2", createFunctionOptions.FunctionConfig.Spec.Triggers)
 
 	// called when function creation failed, update function status with failure
 	reportCreationError := func(creationError error, briefErrorsMessage string, clearCallStack bool) error {
@@ -268,7 +272,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 
 	// called after function was built
 	onAfterBuild := func(buildResult *platform.CreateFunctionBuildResult, buildErr error) (*platform.CreateFunctionResult, error) {
-
+		p.Logger.InfoWith("logging triggers", "triggers 3", createFunctionOptions.FunctionConfig.Spec.Triggers)
 		skipDeploy := functionconfig.ShouldSkipDeploy(createFunctionOptions.FunctionConfig.Meta.Annotations)
 
 		// after a function build (or skip-build) if the annotation FunctionAnnotationSkipBuild exists, it should be removed
