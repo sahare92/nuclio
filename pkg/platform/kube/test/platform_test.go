@@ -85,6 +85,16 @@ func (suite *DeleteFunctionTestSuite) TestFailOnDeletingFunctionWithAPIGateways(
 	})
 }
 
+func (suite *DeployAPIGatewayTestSuite) TestSomething() {
+	createAPIGatewayOptions := suite.compileCreateAPIGatewayOptions("some-name", "some-func")
+	createAPIGatewayOptions.APIGatewayConfig.Spec.Name = ""
+	createAPIGatewayOptions.APIGatewayConfig.Meta.Name = ""
+	suite.deployAPIGateway(createAPIGatewayOptions, func(ingress *extensionsv1beta1.Ingress) {
+		createAPIGatewayOptions.APIGatewayConfig.Meta.Name = "4"
+
+	}, false)
+}
+
 func (suite *DeployAPIGatewayTestSuite) TestDexAuthMode() {
 	functionName := "some-function-name"
 	apiGatewayName := "some-api-gateway-name"
