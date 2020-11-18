@@ -116,13 +116,15 @@ func (agr *apiGatewayResource) GetByID(request *http.Request, id string) (restfu
 
 // Create deploys an api gateway
 func (agr *apiGatewayResource) Create(request *http.Request) (id string, attributes restful.Attributes, responseErr error) {
-	apiGatewayInfo, responseErr := agr.getAPIGatewayInfoFromRequest(request, true)
-	if responseErr != nil {
-		if errors.RootCause(responseErr) != nil {
-			responseErr = errors.RootCause(responseErr)
+	apiGatewayInfo, err := agr.getAPIGatewayInfoFromRequest(request, true)
+	if err != nil {
+		agr.Logger.WarnWith("Failed to get api gateway config and status from body", "err", err)
+
+		if errors.RootCause(err) != nil {
+			err = errors.RootCause(err)
 		}
 
-		return
+		return "", nil, err
 	}
 
 	// create an api gateway config
