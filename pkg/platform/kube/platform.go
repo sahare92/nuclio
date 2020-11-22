@@ -333,12 +333,12 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	return p.HandleDeployFunction(existingFunctionConfig, createFunctionOptions, onAfterConfigUpdated, onAfterBuild)
 }
 
-func (p Platform) EnrichCreateFunctionOptions(createFunctionOptions *platform.CreateFunctionOptions) error {
-	if err := p.Platform.EnrichCreateFunctionOptions(createFunctionOptions); err != nil {
+func (p Platform) EnrichFunctionConfig(functionConfig *functionconfig.Config) error {
+	if err := p.Platform.EnrichFunctionConfig(functionConfig); err != nil {
 		return err
 	}
 
-	if err := p.enrichHTTPTriggersWithServiceType(createFunctionOptions); err != nil {
+	if err := p.enrichHTTPTriggersWithServiceType(functionConfig); err != nil {
 		return errors.Wrap(err, "Failed to enrich HTTP triggers with service type")
 	}
 
@@ -928,18 +928,6 @@ func (p *Platform) GetAllowedAuthenticationModes() ([]string, error) {
 	default:
 		return nil, errors.New("Not a valid configuration instance")
 	}
-}
-
-func (p *Platform) EnrichFunctionConfig(functionConfig *functionconfig.Config) error {
-	if err := p.Platform.EnrichFunctionConfig(functionConfig); err != nil {
-		return errors.Wrap(err, "Function config enrichment failed")
-	}
-
-	if err := p.enrichHTTPTriggersWithServiceType(functionConfig); err != nil {
-		return errors.Wrap(err, "Failed to enrich HTTP triggers with service type")
-	}
-
-	return nil
 }
 
 func (p *Platform) SaveFunctionDeployLogs(functionName, namespace string) error {
