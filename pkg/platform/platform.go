@@ -45,6 +45,9 @@ type Platform interface {
 	// Deploy will deploy a processor image to the platform (optionally building it, if source is provided)
 	CreateFunction(createFunctionOptions *CreateFunctionOptions) (*CreateFunctionResult, error)
 
+	// Enrich create function options upon creating function
+	EnrichCreateFunctionOptions(*CreateFunctionOptions) error
+
 	// UpdateFunction will update a previously deployed function
 	UpdateFunction(updateFunctionOptions *UpdateFunctionOptions) error
 
@@ -131,10 +134,10 @@ type Platform interface {
 
 	RenderImageNamePrefixTemplate(projectName string, functionName string) (string, error)
 
-	// Get scale to zero configuration
+	// GetScaleToZeroConfiguration returns scale to zero configuration
 	GetScaleToZeroConfiguration() (*platformconfig.ScaleToZero, error)
 
-	// Get allowed authentication modes
+	// GetAllowedAuthenticationModes returns allowed authentication modes
 	GetAllowedAuthenticationModes() ([]string, error)
 
 	// GetNamespaces returns all the namespaces in the platform
@@ -162,10 +165,10 @@ type Platform interface {
 	TransformOnbuildArtifactPaths(onbuildArtifacts []runtime.Artifact) (map[string]string, error)
 
 	// GetOnbuildImageRegistry returns onbuild base registry
-	GetOnbuildImageRegistry(registry string) string
+	GetOnbuildImageRegistry(registry string, runtime runtime.Runtime) (string, error)
 
 	// GetBaseImageRegistry returns base image registry
-	GetBaseImageRegistry(registry string) string
+	GetBaseImageRegistry(registry string, runtime runtime.Runtime) (string, error)
 
 	// GetDefaultRegistryCredentialsSecretName returns secret with credentials to push/pull from docker registry
 	GetDefaultRegistryCredentialsSecretName() string
