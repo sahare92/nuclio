@@ -1117,7 +1117,10 @@ func (p *Platform) updateFunctionLastBuildTime(createFunctionOptions *platform.C
 		functionInstance.GetStatus().LastBuildTime = &tickTime
 		if err = p.localStore.createOrUpdateFunction(&functionconfig.ConfigWithStatus{
 			Config: createFunctionOptions.FunctionConfig,
-			Status: *functionInstance.GetStatus(),
+			Status: functionconfig.Status{
+				State: functionconfig.FunctionStateBuilding,
+				LastBuildTime: &tickTime,
+			},
 		}); err != nil {
 			p.Logger.WarnWith("Failed to update function last build time",
 				"functionName", functionInstance.GetConfig().Meta.Name,
