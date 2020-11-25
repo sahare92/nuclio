@@ -25,7 +25,9 @@ import (
 	"github.com/nuclio/nuclio/pkg/dashboard/functiontemplates"
 	"github.com/nuclio/nuclio/pkg/dockerclient"
 	"github.com/nuclio/nuclio/pkg/dockercreds"
+	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
+	"github.com/nuclio/nuclio/pkg/platform/abstract"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
 	"github.com/nuclio/nuclio/pkg/restful"
 
@@ -44,21 +46,22 @@ const (
 
 type Server struct {
 	*restful.AbstractServer
-	dockerKeyDir                   string
-	defaultRegistryURL             string
-	defaultRunRegistryURL          string
-	dockerCreds                    *dockercreds.DockerCreds
-	Platform                       platform.Platform
-	NoPullBaseImages               bool
-	externalIPAddresses            []string
-	defaultNamespace               string
-	Offline                        bool
-	Repository                     *functiontemplates.Repository
-	platformConfiguration          *platformconfig.Config
-	defaultHTTPIngressHostTemplate string
-	imageNamePrefixTemplate        string
-	platformAuthorizationMode      PlatformAuthorizationMode
-	dependantImageRegistryURL      string
+	dockerKeyDir                            string
+	defaultRegistryURL                      string
+	defaultRunRegistryURL                   string
+	dockerCreds                             *dockercreds.DockerCreds
+	Platform                                platform.Platform
+	NoPullBaseImages                        bool
+	externalIPAddresses                     []string
+	defaultNamespace                        string
+	Offline                                 bool
+	Repository                              *functiontemplates.Repository
+	platformConfiguration                   *platformconfig.Config
+	defaultHTTPIngressHostTemplate          string
+	imageNamePrefixTemplate                 string
+	platformAuthorizationMode               PlatformAuthorizationMode
+	dependantImageRegistryURL               string
+	updateFunctionsStuckOnBuildingSleepTime time.Duration
 }
 
 func NewServer(parentLogger logger.Logger,
@@ -97,21 +100,22 @@ func NewServer(parentLogger logger.Logger,
 	}
 
 	newServer := &Server{
-		dockerKeyDir:                   dockerKeyDir,
-		defaultRegistryURL:             defaultRegistryURL,
-		defaultRunRegistryURL:          defaultRunRegistryURL,
-		dockerCreds:                    newDockerCreds,
-		Platform:                       platform,
-		NoPullBaseImages:               noPullBaseImages,
-		externalIPAddresses:            externalIPAddresses,
-		defaultNamespace:               defaultNamespace,
-		Offline:                        offline,
-		Repository:                     repository,
-		platformConfiguration:          platformConfiguration,
-		defaultHTTPIngressHostTemplate: defaultHTTPIngressHostTemplate,
-		imageNamePrefixTemplate:        imageNamePrefixTemplate,
-		platformAuthorizationMode:      PlatformAuthorizationMode(platformAuthorizationMode),
-		dependantImageRegistryURL:      dependantImageRegistryURL,
+		dockerKeyDir:                            dockerKeyDir,
+		defaultRegistryURL:                      defaultRegistryURL,
+		defaultRunRegistryURL:                   defaultRunRegistryURL,
+		dockerCreds:                             newDockerCreds,
+		Platform:                                platform,
+		NoPullBaseImages:                        noPullBaseImages,
+		externalIPAddresses:                     externalIPAddresses,
+		defaultNamespace:                        defaultNamespace,
+		Offline:                                 offline,
+		Repository:                              repository,
+		platformConfiguration:                   platformConfiguration,
+		defaultHTTPIngressHostTemplate:          defaultHTTPIngressHostTemplate,
+		imageNamePrefixTemplate:                 imageNamePrefixTemplate,
+		platformAuthorizationMode:               PlatformAuthorizationMode(platformAuthorizationMode),
+		dependantImageRegistryURL:               dependantImageRegistryURL,
+		updateFunctionsStuckOnBuildingSleepTime: 3 * abstract.UpdateFunctionLastBuildTimeInterval,
 	}
 
 	// create server
@@ -159,6 +163,16 @@ func NewServer(parentLogger logger.Logger,
 		"defaultNamespace", defaultNamespace)
 
 	return newServer, nil
+}
+
+func (s *Server) Start() error {
+	if err := s.AbstractServer.Start(); err != nil {
+		return errors.Wrap(err, "Failed to start server")
+	}
+
+	go s.updateFunctionsStuckOnBuildingState()
+
+	return nil
 }
 
 func (s *Server) GetRegistryURL() string {
@@ -281,6 +295,61 @@ func (s *Server) resolveDockerCredentialsRegistryURL(credentials dockercreds.Cre
 			"http://",
 		})
 	return registryURL
+}
+
+// this function should be called when the dashboard is just starting
+// updates the state of every function that is stuck on building to "error" (could happen if dashboard exited during its build)
+// a function is identified as stuck on building if its lastBuildTime wasn't updated in a decent amount of time
+func (s *Server) updateFunctionsStuckOnBuildingState() {
+
+	validationStartTime := time.Now()
+
+	// sleep for the validation period of time and then check if there are functions on building state
+	// that didn't update their lastBuildTime during this time
+	// if so, set their state to error, with a relevant message
+	time.Sleep(s.updateFunctionsStuckOnBuildingSleepTime)
+
+	// get all functions
+	functions, err := s.Platform.GetFunctions(&platform.GetFunctionsOptions{
+		Namespace: s.GetDefaultNamespace(),
+	})
+	if err != nil {
+		s.Logger.WarnWith("Failed to get functions while updating functions stuck on building state",
+			"err", err)
+
+		return
+	}
+
+	// iterate over all functions and check if they are stuck
+	for _, function := range functions {
+		functionStatus := function.GetStatus()
+
+		if functionStatus.State == functionconfig.FunctionStateBuilding {
+
+			// validate the function is indeed stuck on building state - it hasn't updated since validation start time
+			if functionStatus.LastBuildTime == nil ||
+				functionStatus.LastBuildTime.After(validationStartTime) {
+
+				continue
+			}
+
+			// if we're here - the function is on building state, and its lastBuildTime wasn't updated recently
+			// so we'll assume this function is stuck on building, and we will set its status accordingly
+			functionStatus.State = functionconfig.FunctionStateError
+			functionStatus.Message = "Function found stuck on building state" +
+				" (Perhaps nuclio dashboard went down during function deployment. Try to redeploy)"
+
+			if err := s.Platform.UpdateFunction(&platform.UpdateFunctionOptions{
+				FunctionMeta:   &function.GetConfig().Meta,
+				FunctionSpec:   &function.GetConfig().Spec,
+				FunctionStatus: functionStatus,
+			}); err != nil {
+				s.Logger.WarnWith("Failed to set function status to error while updating functions stuck on building state",
+					"functionName", function.GetConfig().Meta.Name,
+					"err", err)
+			}
+		}
+	}
 }
 
 func (s *Server) loadDockerKeys(dockerKeyDir string) error {

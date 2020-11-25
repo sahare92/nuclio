@@ -18,24 +18,34 @@ package dashboard
 
 import (
 	"testing"
+	"time"
 
 	"github.com/nuclio/nuclio/pkg/dockercreds"
+	"github.com/nuclio/nuclio/pkg/functionconfig"
+	"github.com/nuclio/nuclio/pkg/platform"
+	mockplatform "github.com/nuclio/nuclio/pkg/platform/mock"
 
 	"github.com/nuclio/logger"
-	nucliozap "github.com/nuclio/zap"
+	"github.com/nuclio/zap"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
 type DashboardServerTestSuite struct {
 	suite.Suite
 	Server
-	Logger logger.Logger
+	mockPlatform *mockplatform.Platform
+	Logger       logger.Logger
 }
 
 func (suite *DashboardServerTestSuite) SetupTest() {
 	var err error
+
 	suite.Logger, err = nucliozap.NewNuclioZapTest("test")
 	suite.Require().NoError(err)
+
+	suite.mockPlatform = &mockplatform.Platform{}
+	suite.Platform = suite.mockPlatform
 }
 
 func (suite *DashboardServerTestSuite) TestResolveRegistryURLFromDockerCredentials() {
@@ -65,6 +75,77 @@ func (suite *DashboardServerTestSuite) TestResolveRegistryURLFromDockerCredentia
 		expectedRegistryURL := testCase.expectedRegistryURLHost + "/" + dummyUsername
 		suite.Require().Equal(expectedRegistryURL, suite.resolveDockerCredentialsRegistryURL(testCase.credentials))
 	}
+}
+
+func (suite *DashboardServerTestSuite) TestUpdateStuckFunctionsState() {
+
+	// Mock returned functions
+
+	// a function that is stuck on building state (its state should be set to error)
+	now := time.Now()
+	returnedFunctionStuckOnBuilding := platform.AbstractFunction{}
+	returnedFunctionStuckOnBuilding.Config.Meta.Name = "f1"
+	returnedFunctionStuckOnBuilding.Config.Meta.Namespace = "default-namespace"
+	returnedFunctionStuckOnBuilding.Status.State = functionconfig.FunctionStateBuilding
+	returnedFunctionStuckOnBuilding.Status.LastBuildTime = &now
+
+	// a function that is on building state but doesn't have last build time (should be skipped)
+	returnedFunctionOnBuildingNoLastBuildTime := platform.AbstractFunction{}
+	returnedFunctionOnBuildingNoLastBuildTime.Config.Meta.Name = "f2"
+	returnedFunctionOnBuildingNoLastBuildTime.Config.Meta.Namespace = "default-namespace"
+	returnedFunctionOnBuildingNoLastBuildTime.Status.State = functionconfig.FunctionStateBuilding
+
+	// a function that is on ready state (should be skipped)
+	returnedFunctionReady := platform.AbstractFunction{}
+	returnedFunctionReady.Config.Meta.Name = "f3"
+	returnedFunctionReady.Config.Meta.Namespace = "default-namespace"
+	returnedFunctionReady.Status.State = functionconfig.FunctionStateReady
+
+	// a function that is on building state that is still being built (should be skipped)
+	returnedFunctionNotStuckOnBuilding := platform.AbstractFunction{}
+	returnedFunctionNotStuckOnBuilding.Config.Meta.Name = "f4"
+	returnedFunctionNotStuckOnBuilding.Config.Meta.Namespace = "default-namespace"
+	returnedFunctionNotStuckOnBuilding.Status.State = functionconfig.FunctionStateBuilding
+	laterThanValidationTime := time.Now().Add(1 * time.Second)
+	returnedFunctionNotStuckOnBuilding.Status.LastBuildTime = &laterThanValidationTime
+
+	suite.defaultNamespace = "default-namespace"
+
+	// mock sleep duration to be lower so the test won't take long
+	suite.updateFunctionsStuckOnBuildingSleepTime = 2 * time.Second
+
+	// verify
+	verifyGetFunctions := func(getFunctionsOptions *platform.GetFunctionsOptions) bool {
+		suite.Require().Equal("default-namespace", getFunctionsOptions.Namespace)
+
+		return true
+	}
+	verifyUpdateFunction := func(updateFunctionsOptions *platform.UpdateFunctionOptions) bool {
+		suite.Require().Equal(returnedFunctionStuckOnBuilding.GetConfig().Meta.Name, updateFunctionsOptions.FunctionMeta.Name)
+		suite.Require().Equal(functionconfig.FunctionStateError, updateFunctionsOptions.FunctionStatus.State)
+		suite.Require().Equal("Function found stuck on building state (Perhaps nuclio dashboard went down"+
+			" during function deployment. Try to redeploy)", updateFunctionsOptions.FunctionStatus.Message)
+
+		return true
+	}
+
+	// mock returned functions
+	suite.mockPlatform.
+		On("GetFunctions", mock.MatchedBy(verifyGetFunctions)).
+		Return([]platform.Function{&returnedFunctionStuckOnBuilding,
+			&returnedFunctionOnBuildingNoLastBuildTime,
+			&returnedFunctionNotStuckOnBuilding,
+			&returnedFunctionReady}, nil).
+		Once()
+
+	// mock update function - expect it to be called only once, for the function with "building" state
+	suite.mockPlatform.
+		On("UpdateFunction", mock.MatchedBy(verifyUpdateFunction)).
+		Return(nil).
+		Once()
+
+	// run the update function (the tested function)
+	suite.updateFunctionsStuckOnBuildingState()
 }
 
 func TestDashboardServerTestSuite(t *testing.T) {
