@@ -47,9 +47,10 @@ import (
 //
 
 const (
-	FunctionContainerHTTPPort      = 8080
-	DefaultReadinessTimeoutSeconds = 60
-	DefaultTargetCPU               = 75
+	FunctionContainerHTTPPort           = 8080
+	DefaultReadinessTimeoutSeconds      = 60
+	DefaultTargetCPU                    = 75
+	UpdateFunctionLastBuildTimeInterval = 10 * time.Second
 )
 
 type Platform struct {

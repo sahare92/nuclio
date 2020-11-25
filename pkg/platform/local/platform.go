@@ -198,14 +198,19 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			"name", createFunctionOptions.FunctionConfig.Meta.Name)
 
 		// create the function in the store
+		lastBuildTime := time.Now()
 		if err = p.localStore.createOrUpdateFunction(&functionconfig.ConfigWithStatus{
 			Config: createFunctionOptions.FunctionConfig,
 			Status: functionconfig.Status{
 				State: functionconfig.FunctionStateBuilding,
+				LastBuildTime: &lastBuildTime,
 			},
 		}); err != nil {
 			return errors.Wrap(err, "Failed to create function")
 		}
+
+		// start update function last build time loop
+		go p.updateFunctionLastBuildTime(createFunctionOptions)
 
 		previousHTTPPort, err = p.deletePreviousContainers(createFunctionOptions)
 		if err != nil {
@@ -1073,4 +1078,53 @@ func (p *Platform) compileDeployFunctionLabels(createFunctionOptions *platform.C
 		labels["nuclio.io/annotations"] = string(marshalledAnnotations)
 	}
 	return labels
+}
+
+// keep on updating last build time as long as the function is in building state
+func (p *Platform) updateFunctionLastBuildTime(createFunctionOptions *platform.CreateFunctionOptions) {
+	updateLastBuildTimeTicker := time.NewTicker(abstract.UpdateFunctionLastBuildTimeInterval)
+
+	for tickTime := range updateLastBuildTimeTicker.C {
+
+		// get the updated function instance
+		functions, err := p.localStore.getFunctions(&functionconfig.Meta{
+			Namespace: createFunctionOptions.FunctionConfig.Meta.Namespace,
+			Name: createFunctionOptions.FunctionConfig.Meta.Name,
+		})
+		if err != nil {
+			p.Logger.WarnWith("Failed to get function while updating function last build time",
+				"functionName", createFunctionOptions.FunctionConfig.Meta.Name,
+				"functionNamespace", createFunctionOptions.FunctionConfig.Meta.Namespace,
+				"err", err)
+
+			return
+		}
+		if len(functions) == 0 {
+			p.Logger.WarnWith("No matching functions found while trying to update function last build time",
+				"functionName", createFunctionOptions.FunctionConfig.Meta.Name,
+				"functionNamespace", createFunctionOptions.FunctionConfig.Meta.Namespace)
+
+			return
+		}
+		functionInstance := functions[0]
+
+		// if function is not building anymore - stop this update loop
+		if functionInstance.GetStatus().State != functionconfig.FunctionStateBuilding {
+			return
+		}
+
+		// update last build time
+		functionInstance.GetStatus().LastBuildTime = &tickTime
+		if err = p.localStore.createOrUpdateFunction(&functionconfig.ConfigWithStatus{
+			Config: createFunctionOptions.FunctionConfig,
+			Status: *functionInstance.GetStatus(),
+		}); err != nil {
+			p.Logger.WarnWith("Failed to update function last build time",
+				"functionName", functionInstance.GetConfig().Meta.Name,
+				"functionNamespace", functionInstance.GetConfig().Meta.Namespace,
+				"err", err)
+
+			return
+		}
+	}
 }

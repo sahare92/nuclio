@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
@@ -242,15 +243,19 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		// create or update the function if it exists. If functionInstance is nil, the function will be created
 		// with the configuration and status. if it exists, it will be updated with the configuration and status.
 		// the goal here is for the function to exist prior to building so that it is gettable
+		lastBuildTime := time.Now()
 		existingFunctionInstance, err = p.deployer.createOrUpdateFunction(existingFunctionInstance,
 			createFunctionOptions,
 			&functionconfig.Status{
 				State: functionconfig.FunctionStateBuilding,
+				LastBuildTime: &lastBuildTime,
 			})
-
 		if err != nil {
 			return errors.Wrap(err, "Failed to create/update function before build")
 		}
+
+		// start update function last build time loop
+		go p.updateFunctionLastBuildTime(createFunctionOptions)
 
 		// indicate that the creation state has been updated
 		if createFunctionOptions.CreationStateUpdated != nil {
@@ -1197,5 +1202,44 @@ func (p *Platform) getDefaultServiceType() (v1.ServiceType, error) {
 		return nuctlDefaultServiceType, nil
 	default:
 		return "", errors.New("Not a valid configuration instance")
+	}
+}
+
+// keep on updating last build time as long as the function is in building state
+func (p *Platform) updateFunctionLastBuildTime(createFunctionOptions *platform.CreateFunctionOptions) {
+	updateLastBuildTimeTicker := time.NewTicker(abstract.UpdateFunctionLastBuildTimeInterval)
+
+	for tickTime := range updateLastBuildTimeTicker.C {
+
+		// get the updated function instance
+		functionInstance, err := p.getFunction(createFunctionOptions.FunctionConfig.Meta.Namespace,
+			createFunctionOptions.FunctionConfig.Meta.Name)
+		if err != nil {
+			p.Logger.WarnWith("Failed to get function while updating function last build time",
+				"functionName", createFunctionOptions.FunctionConfig.Meta.Name,
+				"functionNamespace", createFunctionOptions.FunctionConfig.Meta.Namespace,
+				"err", err)
+
+			return
+		}
+
+		// if function is not building anymore - stop this update loop
+		if functionInstance.Status.State != functionconfig.FunctionStateBuilding {
+			return
+		}
+
+		// update last build time
+		functionInstance.Status.LastBuildTime = &tickTime
+		_, err = p.deployer.createOrUpdateFunction(functionInstance,
+			createFunctionOptions,
+			&functionInstance.Status)
+		if err != nil {
+			p.Logger.WarnWith("Failed to update function last build time",
+				"functionName", functionInstance.Name,
+				"functionNamespace", functionInstance.Namespace,
+				"err", err)
+
+			return
+		}
 	}
 }
