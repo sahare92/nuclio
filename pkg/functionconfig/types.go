@@ -525,6 +525,10 @@ type Status struct {
 	HTTPPort    int                      `json:"httpPort,omitempty"`
 	ScaleToZero *ScaleToZeroStatus       `json:"scaleToZero,omitempty"`
 	APIGateways []string                 `json:"apiGateways,omitempty"`
+
+	// keep the last build timestamp updated to know if a function got stuck on building or not
+	// function could be stuck on building state if its provisioning platform (dashboard/nuctl) exited unexpectedly during build
+	LastBuildTime *time.Time `json:"state,omitempty"`
 }
 
 type ScaleToZeroStatus struct {
