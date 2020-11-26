@@ -255,7 +255,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		}
 
 		// start update function last build time loop
-		go p.updateFunctionLastBuildTime(createFunctionOptions)
+		//go p.updateFunctionLastBuildTime(createFunctionOptions)
 
 		// indicate that the creation state has been updated
 		if createFunctionOptions.CreationStateUpdated != nil {
