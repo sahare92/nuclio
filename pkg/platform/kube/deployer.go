@@ -155,6 +155,8 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 		deployLogger = d.logger
 	}
 
+	functionInstance.ResourceVersion = ""
+
 	// do the create / update
 	// TODO: Infer timestamp from function config (consider create/update scenarios)
 	functionCreateOrUpdateTimestamp := time.Now()
