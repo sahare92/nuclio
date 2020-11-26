@@ -243,19 +243,19 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		// create or update the function if it exists. If functionInstance is nil, the function will be created
 		// with the configuration and status. if it exists, it will be updated with the configuration and status.
 		// the goal here is for the function to exist prior to building so that it is gettable
-		lastBuildTime := time.Now()
+		//lastBuildTime := time.Now()
 		existingFunctionInstance, err = p.deployer.createOrUpdateFunction(existingFunctionInstance,
 			createFunctionOptions,
 			&functionconfig.Status{
 				State: functionconfig.FunctionStateBuilding,
-				LastBuildTime: &lastBuildTime,
+				//LastBuildTime: &lastBuildTime,
 			})
 		if err != nil {
 			return errors.Wrap(err, "Failed to create/update function before build")
 		}
 
 		// start update function last build time loop
-		go p.updateFunctionLastBuildTime(createFunctionOptions)
+		//go p.updateFunctionLastBuildTime(createFunctionOptions)
 
 		// indicate that the creation state has been updated
 		if createFunctionOptions.CreationStateUpdated != nil {
