@@ -170,7 +170,7 @@ func (s *Server) Start() error {
 		return errors.Wrap(err, "Failed to start server")
 	}
 
-	//go s.updateFunctionsStuckOnBuildingState()
+	go s.updateFunctionsStuckOnBuildingState()
 
 	return nil
 }
