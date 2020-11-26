@@ -528,7 +528,7 @@ type Status struct {
 
 	// keep the last build timestamp updated to know if a function got stuck on building or not
 	// function could be stuck on building state if its provisioning platform (dashboard/nuctl) exited unexpectedly during build
-	LastBuildTime *time.Time `json:"state,omitempty"`
+	LastBuildTime *time.Time `json:"lastBuildTime,omitempty"`
 }
 
 type ScaleToZeroStatus struct {
