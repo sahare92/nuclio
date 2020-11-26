@@ -1209,7 +1209,8 @@ func (p *Platform) getDefaultServiceType() (v1.ServiceType, error) {
 func (p *Platform) updateFunctionLastBuildTime(createFunctionOptions *platform.CreateFunctionOptions) {
 	updateLastBuildTimeTicker := time.NewTicker(abstract.UpdateFunctionLastBuildTimeInterval)
 
-	for tickTime := range updateLastBuildTimeTicker.C {
+	for _ := range updateLastBuildTimeTicker.C {
+	//for tickTime := range updateLastBuildTimeTicker.C {
 
 		// get the updated function instance
 		functionInstance, err := p.getFunction(createFunctionOptions.FunctionConfig.Meta.Namespace,
@@ -1228,20 +1229,21 @@ func (p *Platform) updateFunctionLastBuildTime(createFunctionOptions *platform.C
 			return
 		}
 
-		// update last build time
-		_, err = p.deployer.createOrUpdateFunction(functionInstance,
-			createFunctionOptions,
-			&functionconfig.Status{
-				State: functionconfig.FunctionStateBuilding,
-				LastBuildTime: &tickTime,
-			})
-		if err != nil {
-			p.Logger.WarnWith("Failed to update function last build time",
-				"functionName", functionInstance.Name,
-				"functionNamespace", functionInstance.Namespace,
-				"err", err)
-
-			return
-		}
+		p.Logger.InfoWith("Updating function now", "createFunctionOptions", createFunctionOptions)
+		//// update last build time
+		//_, err = p.deployer.createOrUpdateFunction(functionInstance,
+		//	createFunctionOptions,
+		//	&functionconfig.Status{
+		//		State: functionconfig.FunctionStateBuilding,
+		//		LastBuildTime: &tickTime,
+		//	})
+		//if err != nil {
+		//	p.Logger.WarnWith("Failed to update function last build time",
+		//		"functionName", functionInstance.Name,
+		//		"functionNamespace", functionInstance.Namespace,
+		//		"err", err)
+		//
+		//	return
+		//}
 	}
 }
