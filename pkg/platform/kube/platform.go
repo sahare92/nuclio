@@ -1209,7 +1209,7 @@ func (p *Platform) getDefaultServiceType() (v1.ServiceType, error) {
 func (p *Platform) updateFunctionLastBuildTime(createFunctionOptions *platform.CreateFunctionOptions) {
 	updateLastBuildTimeTicker := time.NewTicker(abstract.UpdateFunctionLastBuildTimeInterval)
 
-	for _ := range updateLastBuildTimeTicker.C {
+	for range updateLastBuildTimeTicker.C {
 	//for tickTime := range updateLastBuildTimeTicker.C {
 
 		// get the updated function instance
