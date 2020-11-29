@@ -156,13 +156,13 @@ func (d *deployer) deploy(functionInstance *nuclioio.NuclioFunction,
 	}
 
 	// update the resource version - because it was probably changed by updateFunctionLastBuildTime() loop
-	updatedInstance, err := d.consumer.nuclioClientSet.NuclioV1beta1().
-		NuclioFunctions(functionInstance.Namespace).
-		Get(functionInstance.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, nil, err.Error(), errors.Wrap(err, "Failed to get function")
-	}
-	functionInstance.ResourceVersion = updatedInstance.ResourceVersion
+	//updatedInstance, err := d.consumer.nuclioClientSet.NuclioV1beta1().
+	//	NuclioFunctions(functionInstance.Namespace).
+	//	Get(functionInstance.Name, metav1.GetOptions{})
+	//if err != nil {
+	//	return nil, nil, err.Error(), errors.Wrap(err, "Failed to get function")
+	//}
+	functionInstance.ResourceVersion = ""
 
 	// do the create / update
 	// TODO: Infer timestamp from function config (consider create/update scenarios)
