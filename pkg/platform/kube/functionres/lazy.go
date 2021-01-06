@@ -1553,7 +1553,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			eventBody = string(eventBodyAsJSON)
 		}
 
-		curlCommand = fmt.Sprintf("echo %s > %s && %s %s",
+		curlCommand = fmt.Sprintf("echo %s > %s && sleep 60 && %s %s",
 			eventBody,
 			eventBodyFilePath,
 			curlCommand,
