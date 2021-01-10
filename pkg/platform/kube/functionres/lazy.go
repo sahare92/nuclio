@@ -1552,10 +1552,11 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 		if err := json.Compact(eventBodyAsCompactedJSON, []byte(eventBody)); err == nil {
 
 			// if it is a valid JSON, marshal(dump) it into event body
-			res, err := json.Marshal(eventBodyAsCompactedJSON.String())
-			if err == nil {
-				eventBody = string(res)
-			}
+			//res, err := json.Marshal(eventBodyAsCompactedJSON.String())
+			//if err == nil {
+			//	eventBody = string(res)
+			//}
+			eventBody = eventBodyAsCompactedJSON.String()
 		}
 
 		curlCommand = fmt.Sprintf("echo '%s' > %s && %s %s",
