@@ -1558,7 +1558,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 			//}
 			//lc.logger.InfoWith("Marshalled string", "marshalledRes", string(res))
 			eventBody = eventBodyAsCompactedJSON.String()
-			eventBodyCurlArg = fmt.Sprintf("%s --header \"Content-Type: application/json\"", eventBodyCurlArg)
+			//eventBodyCurlArg = fmt.Sprintf("%s --header \"Content-Type: application/json\"", eventBodyCurlArg)
 		}
 
 		curlCommand = fmt.Sprintf("echo '%s' > %s && sleep 30 && %s %s",
