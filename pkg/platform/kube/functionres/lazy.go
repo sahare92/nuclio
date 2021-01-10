@@ -1552,7 +1552,12 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 		err := json.Compact(eventBodyAsCompactedJSON, []byte(eventBody))
 		if err == nil {
 			lc.logger.InfoWith("Compacted JSON biatch", "eventBodyAsCompactedJSON", eventBodyAsCompactedJSON.String())
-			eventBody = eventBodyAsCompactedJSON.String()
+			res, err := json.Marshal(eventBodyAsCompactedJSON.Bytes())
+			if err != nil {
+				lc.logger.WarnWith("failed to marshal", "err", err.Error())
+			}
+			lc.logger.InfoWith("Marshalled string", "marshalledRes", string(res))
+			eventBody = string(res)
 			eventBodyCurlArg = fmt.Sprintf("%s --header \"Content-Type: application/json\"", eventBodyCurlArg)
 		}
 
