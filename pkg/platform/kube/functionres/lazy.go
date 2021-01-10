@@ -1547,21 +1547,18 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 		eventBodyFilePath := "/tmp/eventbody.out"
 		eventBodyCurlArg := fmt.Sprintf("--data '@%s'", eventBodyFilePath)
 
-		// if body is a valid JSON - parse it accordingly. (use json.Compact to identify if it's a valid JSON and compact it)
+		// try compact as JSON (will fail if it's not a valid JSON)
 		eventBodyAsCompactedJSON := bytes.NewBuffer([]byte{})
-		err := json.Compact(eventBodyAsCompactedJSON, []byte(eventBody))
-		if err == nil {
-			lc.logger.InfoWith("Compacted JSON biatch", "eventBodyAsCompactedJSON", eventBodyAsCompactedJSON.String())
+		if err := json.Compact(eventBodyAsCompactedJSON, []byte(eventBody)); err == nil {
+
+			// if it is a valid JSON, marshal(dump) it into event body
 			res, err := json.Marshal(eventBodyAsCompactedJSON.String())
-			if err != nil {
-				lc.logger.WarnWith("failed to marshal", "err", err.Error())
+			if err == nil {
+				eventBody = string(res)
 			}
-			lc.logger.InfoWith("Marshalled string", "marshalledRes", string(res))
-			eventBody = string(res)
-			//eventBodyCurlArg = fmt.Sprintf("%s --header \"Content-Type: application/json\"", eventBodyCurlArg)
 		}
 
-		curlCommand = fmt.Sprintf("echo '%s' > %s && sleep 30 && %s %s",
+		curlCommand = fmt.Sprintf("echo '%s' > %s && %s %s",
 			eventBody,
 			eventBodyFilePath,
 			curlCommand,
