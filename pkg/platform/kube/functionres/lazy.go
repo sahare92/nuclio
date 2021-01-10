@@ -1545,18 +1545,18 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 
 		// if a body exists - dump it into a file, and pass this file as argument (done to support JSON body)
 		eventBodyFilePath := "/tmp/eventbody.out"
-		eventBodyCurlArg := fmt.Sprintf("--data '@%s'", eventBodyFilePath)
+		eventBodyCurlArg := fmt.Sprintf("--data-binary '@%s'", eventBodyFilePath)
 
 		// if body is a valid JSON parse it accordingly
 		eventBodyAsJSON, err := json.Marshal(eventBody)
 		if err == nil {
 			lc.logger.InfoWith("Parsed event body as json", "eventBodyAsJSON", eventBodyAsJSON,
-				"eventBodyAsString", string(eventBody))
-			eventBody = fmt.Sprintf("\"%s\"", eventBody)
+				"eventBodyAsString", string(eventBodyAsJSON))
+			eventBody = string(eventBodyAsJSON)
 			eventBodyCurlArg = fmt.Sprintf("%s --header \"Content-Type: application/json\"", eventBodyCurlArg)
 		}
 
-		curlCommand = fmt.Sprintf("echo %s > %s && sleep 60 && %s %s",
+		curlCommand = fmt.Sprintf("echo %s > %s && sleep 30 && %s %s",
 			eventBody,
 			eventBodyFilePath,
 			curlCommand,
