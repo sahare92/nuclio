@@ -1545,7 +1545,7 @@ func (lc *lazyClient) generateCronTriggerCronJobSpec(functionLabels labels.Set,
 
 		// if a body exists - dump it into a file, and pass this file as argument (done to support JSON body)
 		eventBodyFilePath := "/tmp/eventbody.out"
-		eventBodyCurlArg := fmt.Sprintf("--data-binary '@%s'", eventBodyFilePath)
+		eventBodyCurlArg := fmt.Sprintf("--data '@%s'", eventBodyFilePath)
 
 		// if body is a valid JSON - parse it accordingly. (use json.Compact to identify if it's a valid JSON and compact it)
 		eventBodyAsCompactedJSON := bytes.NewBuffer([]byte{})
