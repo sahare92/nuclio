@@ -38,9 +38,15 @@ rules:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
+
+{{- if gt (len .Values.rbac.additionalManagedNamespaces) 0 }}
+kind: ClusterRole
+{{- else }}
 kind: Role
+{{- end }}
+
 metadata:
-  name: {{ template "nuclio.crdAdminName" . }}-role
+  name: {{ template "nuclio.crdAdminName" . }}
   labels:
     app: {{ template "nuclio.name" . }}
     release: {{ .Release.Name }}

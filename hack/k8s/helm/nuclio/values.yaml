@@ -189,13 +189,16 @@ rbac:
 
   # Allow / deny cluster-wide resource access. values: "cluster", "namespaced".
   # If set to "namespaced" dashboard will not be able to create nuclio resources in any namespace other
-  # than the one in which it is installed
+  # than the one in which it is installed + those inside "additionalManagedNamespaces"
   # Likewise, for "namespaced", the controller won't be able to act on these nuclio resources in any
-  # namespace other than the one in which it is installed
+  # namespace other than the one in which it is installed + those inside "additionalManagedNamespaces"
   crdAccessMode: cluster
 
+  # A list of namespaces that nuclio dashboard/controller will also get resource access to
+  additionalManagedNamespaces:
+
 crd:
-  
+
   # If true, creates cluster wide custom resources definitions for nuclio's resources
   create: true
 
