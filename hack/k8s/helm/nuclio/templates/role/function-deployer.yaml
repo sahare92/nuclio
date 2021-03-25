@@ -16,13 +16,9 @@
 # All access to services, configmaps, deployments, ingresses, HPAs, cronJobs
 # are conditionally limited to the nuclio namespace or cluster-wide
 apiVersion: rbac.authorization.k8s.io/v1beta1
-{{- if or (eq .Values.rbac.crdAccessMode "cluster") (gt (len .Values.rbac.additionalManagedNamespaces) 0) }}
 kind: ClusterRole
-{{- else }}
-kind: Role
-{{- end }}
 metadata:
-  name: {{ template "nuclio.functionDeployerName" . }}
+  name: {{ template "nuclio.functionDeployerName" . }}-clusterrole
   labels:
     app: {{ template "nuclio.name" . }}
     release: {{ .Release.Name }}

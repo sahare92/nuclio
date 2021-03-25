@@ -27,7 +27,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "nuclio.functionDeployerName" . }}
+  name: {{ template "nuclio.functionDeployerName" . }}-clusterrole
 subjects:
 - kind: ServiceAccount
   name: {{ template "nuclio.serviceAccountName" . }}
@@ -35,22 +35,20 @@ subjects:
 
 {{- else }}
 
+# append "" namespace so a role binding to current namespace will always be created
 {{- range (append .Values.rbac.additionalManagedNamespaces "") }}
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: {{ template "nuclio.functionDeployerName" . }}-rolebinding
+  namespace: {{ . }}
   labels:
     app: {{ template "nuclio.name" . }}
     release: {{ .Release.Name }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-{{- if gt (len .Values.rbac.additionalManagedNamespaces) 0 }}
-  kind: Role
-{{- else }}
   kind: ClusterRole
-{{- end }}
-  name: {{ template "nuclio.functionDeployerName" . }}
+  name: {{ template "nuclio.functionDeployerName" . }}-clusterrole
 subjects:
 - kind: ServiceAccount
   name: {{ template "nuclio.serviceAccountName" . }}

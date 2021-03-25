@@ -195,7 +195,7 @@ rbac:
   crdAccessMode: cluster
 
   # A list of namespaces that nuclio dashboard/controller will also get resource access to
-  additionalManagedNamespaces:
+  additionalManagedNamespaces: []
 
 crd:
 
