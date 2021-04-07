@@ -33,7 +33,7 @@ subjects:
 
 {{- if eq .Values.rbac.crdAccessMode "namespaced" }}
 
-# append "" namespace so a role binding to current namespace will always be created
+# append empty namespace for the current namespace
 {{- range (append .Values.rbac.additionalManagedNamespaces "") }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1

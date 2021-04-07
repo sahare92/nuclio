@@ -194,7 +194,7 @@ rbac:
   # namespace other than the one in which it is installed + those inside "additionalManagedNamespaces"
   crdAccessMode: cluster
 
-  # A list of namespaces that nuclio dashboard/controller will also get resource access to
+  # list of namespaces that the dashboard/controller will also get resources access to
   additionalManagedNamespaces: []
 
 crd:
