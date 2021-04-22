@@ -5,11 +5,11 @@ const (
 )
 
 type Project struct {
-	Type string      `json:"type,omitempty"`
 	Data ProjectData `json:"data,omitempty"`
 }
 
 type ProjectData struct {
+	Type string      `json:"type,omitempty"`
 	Attributes ProjectAttributes `json:"attributes,omitempty"`
 }
 

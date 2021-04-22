@@ -57,7 +57,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	}
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
-	if _, err := resp.Body.Read(responseBody); err != nil {
+	if err != nil {
 		return errors.Wrap(err, "Failed to read response body")
 	}
 
@@ -137,8 +137,8 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 
 func (c *Client) generateProjectRequestBody(projectConfig *platform.ProjectConfig) ([]byte, error) {
 	project := Project{
-		Type: ProjectType,
 		Data: ProjectData{
+			Type: ProjectType,
 			Attributes: ProjectAttributes{
 				Name: projectConfig.Meta.Name,
 				Namespace: projectConfig.Meta.Namespace,
@@ -162,8 +162,8 @@ func (c *Client) enrichProjectWithNuclioFields(project *Project) {
 
 func (c *Client) generateProjectDeletionRequestBody(projectName string) ([]byte, error) {
 	return json.Marshal(Project{
-		Type: ProjectType,
 		Data: ProjectData{
+			Type: ProjectType,
 			Attributes: ProjectAttributes{
 				Name: projectName,
 			},
