@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	"github.com/nuclio/logger"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -115,8 +114,7 @@ func NormalizeURLPath(p string) string {
 
 // Sends an http request
 // ignore expectedStatusCode by setting it to 0
-func SendHTTPRequest(l logger.Logger,
-	method string,
+func SendHTTPRequest(method string,
 	requestURL string,
 	body []byte,
 	headers map[string]string,
@@ -169,16 +167,12 @@ func SendHTTPRequest(l logger.Logger,
 		}
 	}
 
-	l.DebugWith("testingg4", "statusCode", resp.StatusCode)
-
-	l.DebugWith("testingg5", "expectedStatusCode", expectedStatusCode)
-
 	// validate status code is as expected
 	if expectedStatusCode != 0 && resp.StatusCode != expectedStatusCode {
-		l.Debug("inside the if!")
-		return nil, resp.StatusCode, errors.Wrap(err, "Got unexpected response status code")
+		return nil, resp.StatusCode, errors.Errorf("Got unexpected response status code: %s. Expected: %s",
+			resp.StatusCode,
+			expectedStatusCode)
 	}
-	l.Debug("outside the if!")
 
 	return responseBody, resp.StatusCode, nil
 }

@@ -43,12 +43,8 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		return errors.Wrap(err, "Failed to generate project request body")
 	}
 
-	c.logger.DebugWith("testparams",
-		"address", fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
-		"body", body)
 	// send the request
-	responseBody, _, err := common.SendHTTPRequest(c.logger,
-		http.MethodPost,
+	responseBody, _, err := common.SendHTTPRequest(http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
 		map[string]string{
@@ -58,9 +54,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		[]*http.Cookie{createProjectOptions.SessionCookie},
 		http.StatusAccepted,
 		true)
-	c.logger.DebugWith("showmesomeerr", "err", err)
 	if err != nil {
-		c.logger.DebugWith("insidetheerr", "err", err)
 		return errors.Wrap(err, "Failed to send request to leader")
 	}
 
@@ -84,8 +78,7 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 	}
 
 	// send the request
-	if _, _, err := common.SendHTTPRequest(c.logger,
-		http.MethodPut,
+	if _, _, err := common.SendHTTPRequest(http.MethodPut,
 		fmt.Sprintf("%s/%s/%s",
 			c.platformConfiguration.ProjectsLeader.Address,
 			"projects/__name__",
@@ -117,8 +110,7 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	}
 
 	// send the request
-	if _, _, err := common.SendHTTPRequest(c.logger,
-		http.MethodDelete,
+	if _, _, err := common.SendHTTPRequest(http.MethodDelete,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
 		map[string]string{
