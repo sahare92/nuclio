@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/nuclio/logger"
 	"io"
 	"net/http"
 	"os"
@@ -113,7 +114,8 @@ func NormalizeURLPath(p string) string {
 
 // Sends an http request
 // ignore expectedStatusCode by setting it to 0
-func SendHTTPRequest(method string,
+func SendHTTPRequest(l logger.Logger,
+	method string,
 	requestURL string,
 	body []byte,
 	headers map[string]string,
@@ -154,6 +156,16 @@ func SendHTTPRequest(method string,
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to send HTTP request")
 	}
+
+	l.DebugWith("testingggg",
+		"respIsNil", resp==nil,
+		"errIsNil", err==nil)
+
+	l.DebugWith("testingggg2",
+		"respBodyIsNil", resp.Body==nil,
+		"respBody", resp.Body)
+
+	l.DebugWith("testingg3")
 
 	// validate status code is as expected
 	if expectedStatusCode != 0 && resp.StatusCode != expectedStatusCode {
