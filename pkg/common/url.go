@@ -169,7 +169,7 @@ func SendHTTPRequest(method string,
 
 	// validate status code is as expected
 	if expectedStatusCode != 0 && resp.StatusCode != expectedStatusCode {
-		return nil, resp.StatusCode, errors.Errorf("Got unexpected response status code: %s. Expected: %s",
+		return nil, resp.StatusCode, errors.Errorf("Got unexpected response status code: %d. Expected: %d",
 			resp.StatusCode,
 			expectedStatusCode)
 	}

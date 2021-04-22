@@ -47,12 +47,9 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	responseBody, _, err := common.SendHTTPRequest(http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
-		map[string]string{
-			ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio,
-			"Content-type": "application/json; charset=utf-8",
-		},
+		map[string]string{ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio},
 		[]*http.Cookie{createProjectOptions.SessionCookie},
-		http.StatusAccepted,
+		http.StatusCreated,
 		true)
 	if err != nil {
 		return errors.Wrap(err, "Failed to send request to leader")
