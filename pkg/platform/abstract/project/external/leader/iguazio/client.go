@@ -57,7 +57,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	}
 
 	var responseBody []byte
-	if resp != nil {
+	if resp != nil && resp.Body != nil {
 		responseBody, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "Failed to read response body")
