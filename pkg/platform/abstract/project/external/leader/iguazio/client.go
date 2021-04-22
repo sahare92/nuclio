@@ -58,7 +58,9 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		[]*http.Cookie{createProjectOptions.SessionCookie},
 		http.StatusAccepted,
 		true)
+	c.logger.DebugWith("showmesomeerr", "err", err)
 	if err != nil {
+		c.logger.DebugWith("insidetheerr", "err", err)
 		return errors.Wrap(err, "Failed to send request to leader")
 	}
 
