@@ -56,7 +56,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 			"Content-type": "application/json; charset=utf-8",
 		},
 		[]*http.Cookie{createProjectOptions.SessionCookie},
-		http.StatusAccepted,
+		http.StatusCreated,
 		true)
 	if err != nil {
 		return errors.Wrap(err, "Failed to send request to leader")
