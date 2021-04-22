@@ -44,6 +44,9 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		return errors.Wrap(err, "Failed to generate project request body")
 	}
 
+	c.logger.DebugWith("testparams",
+		"address", fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
+		"body", body)
 	// send the request
 	resp, err := common.SendHTTPRequest(http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
