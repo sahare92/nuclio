@@ -19,9 +19,9 @@ type ProjectAttributes struct {
 	Labels       map[string]string `json:"labels,omitempty"`
 	Annotations  map[string]string `json:"annotations,omitempty"`
 	Description  string            `json:"description,omitempty"`
-	NuclioFields NuclioFields      `json:"nuclio_fields,omitempty"`
+	NuclioFields NuclioProject     `json:"nuclio_fields,omitempty"`
 }
 
-type NuclioFields struct {
+type NuclioProject struct {
 	// currently no nuclio specific fields are needed
 }

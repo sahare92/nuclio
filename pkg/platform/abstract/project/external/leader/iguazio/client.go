@@ -73,7 +73,8 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	c.logger.DebugWith("Successfully sent create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
 		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace,
-		"responseBody", string(responseBody))
+		"responseBody", string(responseBody),
+		"statusCode", resp.StatusCode)
 
 	return nil
 }
@@ -163,7 +164,7 @@ func (c *Client) generateProjectRequestBody(projectConfig *platform.ProjectConfi
 func (c *Client) enrichProjectWithNuclioFields(project *Project) {
 
 	// TODO: update this function when nuclio fields are added
-	//project.Data.Attributes.NuclioFields = NuclioFields{}
+	//project.Data.Attributes.NuclioProject = NuclioProject{}
 }
 
 func (c *Client) generateProjectDeletionRequestBody(projectName string) ([]byte, error) {
