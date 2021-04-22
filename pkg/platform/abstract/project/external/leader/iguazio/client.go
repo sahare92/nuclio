@@ -51,7 +51,10 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	resp, err := common.SendHTTPRequest(http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
-		map[string]string{ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio},
+		map[string]string{
+			ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio,
+			"Content-type": "application/json; charset=utf-8",
+		},
 		[]*http.Cookie{createProjectOptions.SessionCookie},
 		http.StatusAccepted,
 		true)
@@ -110,8 +113,7 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 
 func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) error {
 	c.logger.DebugWith("Sending delete project request to leader",
-		"name", deleteProjectOptions.Meta.Name,
-		"namespace", deleteProjectOptions.Meta.Namespace)
+		"name", deleteProjectOptions.Meta.Name)
 
 	// generate request body
 	body, err := c.generateProjectDeletionRequestBody(deleteProjectOptions.Meta.Name)
@@ -135,8 +137,7 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	}
 
 	c.logger.DebugWith("Successfully sent delete project request to leader",
-		"name", deleteProjectOptions.Meta.Name,
-		"namespace", deleteProjectOptions.Meta.Namespace)
+		"name", deleteProjectOptions.Meta.Name)
 
 	return nil
 }
@@ -147,7 +148,6 @@ func (c *Client) generateProjectRequestBody(projectConfig *platform.ProjectConfi
 			Type: ProjectType,
 			Attributes: ProjectAttributes{
 				Name: projectConfig.Meta.Name,
-				Namespace: projectConfig.Meta.Namespace,
 				Labels: projectConfig.Meta.Labels,
 				Annotations: projectConfig.Meta.Annotations,
 				Description: projectConfig.Spec.Description,
