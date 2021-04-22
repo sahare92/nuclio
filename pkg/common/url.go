@@ -176,10 +176,7 @@ func SendHTTPRequest(l logger.Logger,
 	// validate status code is as expected
 	if expectedStatusCode != 0 && resp.StatusCode != expectedStatusCode {
 		l.Debug("inside the if!")
-		return nil, resp.StatusCode, errors.Wrapf(err,
-			"Got unexpected response status code: %s. Expected: %s",
-			resp.StatusCode,
-			expectedStatusCode)
+		return nil, resp.StatusCode, errors.Wrap(err, "Got unexpected response status code")
 	}
 	l.Debug("outside the if!")
 
