@@ -56,9 +56,12 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		return errors.Wrap(err, "Failed to send request to leader")
 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "Failed to read response body")
+	var responseBody []byte
+	if resp != nil {
+		responseBody, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "Failed to read response body")
+		}
 	}
 
 	c.logger.DebugWith("Successfully sent create project request to leader",
