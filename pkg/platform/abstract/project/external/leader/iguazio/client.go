@@ -3,6 +3,7 @@ package iguazio
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/nuclio/nuclio/pkg/common"
@@ -55,7 +56,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		return errors.Wrap(err, "Failed to send request to leader")
 	}
 
-	var responseBody []byte
+	responseBody, err := ioutil.ReadAll(resp.Body)
 	if _, err := resp.Body.Read(responseBody); err != nil {
 		return errors.Wrap(err, "Failed to read response body")
 	}
