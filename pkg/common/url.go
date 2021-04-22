@@ -122,7 +122,7 @@ func SendHTTPRequest(l logger.Logger,
 	headers map[string]string,
 	cookies []*http.Cookie,
 	expectedStatusCode int,
-	insecure bool) (*http.Response, error) {
+	insecure bool) ([]byte, error) {
 
 	var client *http.Client
 
@@ -158,14 +158,9 @@ func SendHTTPRequest(l logger.Logger,
 		return nil, errors.Wrap(err, "Failed to send HTTP request")
 	}
 
-	l.DebugWith("testingggg",
-		"respIsNil", resp==nil,
-		"errIsNil", err==nil)
+	defer resp.Body.Close() // nolint: errcheck
 
-	l.DebugWith("testingggg2",
-		"respBodyIsNil", resp.Body==nil,
-		"respBody", resp.Body)
-
+	// read response body
 	var responseBody []byte
 	if resp != nil && resp.Body != nil {
 		responseBody, err = ioutil.ReadAll(resp.Body)
@@ -174,9 +169,9 @@ func SendHTTPRequest(l logger.Logger,
 		}
 	}
 
-	l.DebugWith("testingg3", "responseBody", string(responseBody))
-
 	l.DebugWith("testingg4", "statusCode", resp.StatusCode)
+
+	l.DebugWith("testingg5", "expectedStatusCode", expectedStatusCode)
 
 	// validate status code is as expected
 	if expectedStatusCode != 0 && resp.StatusCode != expectedStatusCode {
@@ -186,5 +181,5 @@ func SendHTTPRequest(l logger.Logger,
 			expectedStatusCode)
 	}
 
-	return resp, nil
+	return responseBody, nil
 }
