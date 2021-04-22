@@ -74,8 +74,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	c.logger.DebugWith("Successfully sent create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
 		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace,
-		"responseBody", string(responseBody),
-		"statusCode", resp.StatusCode)
+		"responseBody", string(responseBody))
 
 	return nil
 }

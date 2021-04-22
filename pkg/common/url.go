@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/nuclio/logger"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -165,7 +166,17 @@ func SendHTTPRequest(l logger.Logger,
 		"respBodyIsNil", resp.Body==nil,
 		"respBody", resp.Body)
 
-	l.DebugWith("testingg3")
+	var responseBody []byte
+	if resp != nil && resp.Body != nil {
+		responseBody, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to read response body")
+		}
+	}
+
+	l.DebugWith("testingg3", "responseBody", string(responseBody))
+
+	l.DebugWith("testingg4", "statusCode", resp.StatusCode)
 
 	// validate status code is as expected
 	if expectedStatusCode != 0 && resp.StatusCode != expectedStatusCode {
