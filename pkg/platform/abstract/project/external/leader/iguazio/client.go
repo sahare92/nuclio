@@ -3,7 +3,6 @@ package iguazio
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/nuclio/nuclio/pkg/common"
@@ -48,7 +47,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		"address", fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		"body", body)
 	// send the request
-	resp, err := common.SendHTTPRequest(c.logger,
+	responseBody, _, err := common.SendHTTPRequest(c.logger,
 		http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
@@ -61,14 +60,6 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 		true)
 	if err != nil {
 		return errors.Wrap(err, "Failed to send request to leader")
-	}
-
-	var responseBody []byte
-	if resp != nil && resp.Body != nil {
-		responseBody, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "Failed to read response body")
-		}
 	}
 
 	c.logger.DebugWith("Successfully sent create project request to leader",
@@ -91,7 +82,7 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 	}
 
 	// send the request
-	if _, err := common.SendHTTPRequest(c.logger,
+	if _, _, err := common.SendHTTPRequest(c.logger,
 		http.MethodPut,
 		fmt.Sprintf("%s/%s/%s",
 			c.platformConfiguration.ProjectsLeader.Address,
@@ -124,7 +115,7 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	}
 
 	// send the request
-	if _, err := common.SendHTTPRequest(c.logger,
+	if _, _, err := common.SendHTTPRequest(c.logger,
 		http.MethodDelete,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
