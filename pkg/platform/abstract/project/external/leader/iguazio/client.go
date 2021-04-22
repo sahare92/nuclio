@@ -44,20 +44,26 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	}
 
 	// send the request
-	if _, err := common.SendHTTPRequest(http.MethodPost,
+	resp, err := common.SendHTTPRequest(http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
 		body,
 		map[string]string{ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio},
 		[]*http.Cookie{createProjectOptions.SessionCookie},
 		http.StatusAccepted,
-		true); err != nil {
-
+		true)
+	if err != nil {
 		return errors.Wrap(err, "Failed to send request to leader")
+	}
+
+	var responseBody []byte
+	if _, err := resp.Body.Read(responseBody); err != nil {
+		return errors.Wrap(err, "Failed to read response body")
 	}
 
 	c.logger.DebugWith("Successfully sent create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
-		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace)
+		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace,
+		"responseBody", string(responseBody))
 
 	return nil
 }
