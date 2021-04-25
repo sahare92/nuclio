@@ -75,7 +75,7 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 	}
 
 	// send the request
-	if _, _, err := common.SendHTTPRequest(http.MethodPut,
+	responseBody, _, err := common.SendHTTPRequest(http.MethodPut,
 		fmt.Sprintf("%s/%s/%s",
 			c.platformConfiguration.ProjectsLeader.Address,
 			"projects/__name__",
@@ -84,14 +84,15 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 		map[string]string{ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio},
 		[]*http.Cookie{updateProjectOptions.SessionCookie},
 		http.StatusOK,
-		true); err != nil {
-
+		true);
+	if err != nil {
 		return errors.Wrap(err, "Failed to send request to leader")
 	}
 
 	c.logger.DebugWith("Successfully sent update project request to leader",
 		"name", updateProjectOptions.ProjectConfig.Meta.Name,
-		"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace)
+		"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace,
+		"responseBody", string(responseBody))
 
 	return nil
 }
