@@ -44,10 +44,11 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	}
 
 	// send the request
+	headers := c.generateCommonRequestHeaders()
 	responseBody, _, err := common.SendHTTPRequest(http.MethodPost,
-		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
+		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.APIAddress, "projects"),
 		body,
-		map[string]string{ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio},
+		headers,
 		[]*http.Cookie{createProjectOptions.SessionCookie},
 		http.StatusCreated,
 		true)
@@ -75,13 +76,14 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 	}
 
 	// send the request
+	headers := c.generateCommonRequestHeaders()
 	responseBody, _, err := common.SendHTTPRequest(http.MethodPut,
 		fmt.Sprintf("%s/%s/%s",
-			c.platformConfiguration.ProjectsLeader.Address,
+			c.platformConfiguration.ProjectsLeader.APIAddress,
 			"projects/__name__",
 			updateProjectOptions.ProjectConfig.Meta.Name),
 		body,
-		map[string]string{ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio},
+		headers,
 		[]*http.Cookie{updateProjectOptions.SessionCookie},
 		http.StatusOK,
 		true);
@@ -108,13 +110,12 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	}
 
 	// send the request
+	headers := c.generateCommonRequestHeaders()
+	headers["igz-project-deletion-strategy"] = string(deleteProjectOptions.Strategy)
 	if _, _, err := common.SendHTTPRequest(http.MethodDelete,
-		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.Address, "projects"),
+		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.APIAddress, "projects"),
 		body,
-		map[string]string{
-			ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio,
-			"igz-project-deletion-strategy": string(deleteProjectOptions.Strategy),
-		},
+		headers,
 		[]*http.Cookie{deleteProjectOptions.SessionCookie},
 		http.StatusAccepted,
 		true); err != nil {
@@ -126,6 +127,13 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 		"name", deleteProjectOptions.Meta.Name)
 
 	return nil
+}
+
+func (c *Client) generateCommonRequestHeaders() map[string]string {
+	return map[string]string{
+		ProjectsRoleHeaderKey: ProjectsRoleHeaderValueNuclio,
+		"Content-Type": "application/json",
+	}
 }
 
 func (c *Client) generateProjectRequestBody(projectConfig *platform.ProjectConfig) ([]byte, error) {
