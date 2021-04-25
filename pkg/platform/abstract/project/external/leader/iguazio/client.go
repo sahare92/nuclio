@@ -86,7 +86,7 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 		headers,
 		[]*http.Cookie{updateProjectOptions.SessionCookie},
 		http.StatusOK,
-		true);
+		true)
 	if err != nil {
 		return errors.Wrap(err, "Failed to send request to leader")
 	}
