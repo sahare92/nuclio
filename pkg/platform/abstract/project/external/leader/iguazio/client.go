@@ -147,6 +147,10 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 func (c *Client) GetAll() ([]platform.Project, error) {
 	c.logger.DebugWith("Sending get all projects request to leader")
 
+	if c.cachedCookie == nil {
+		return nil, nil
+	}
+
 	// send the request
 	headers := c.generateCommonRequestHeaders()
 	responseBody, _, err := common.SendHTTPRequest(http.MethodGet,

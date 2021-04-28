@@ -49,7 +49,7 @@ func CreatePlatform(parentLogger logger.Logger,
 
 	case "auto":
 
-		// kubeconfig path is set, or running in kubernetes clsuter
+		// kubeconfig path is set, or running in kubernetes cluster
 		if common.GetKubeconfigPath(platformConfiguration.Kube.KubeConfigPath) != "" ||
 			kube.IsInCluster() {
 
