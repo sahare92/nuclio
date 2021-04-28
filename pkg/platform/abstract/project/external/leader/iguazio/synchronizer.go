@@ -26,6 +26,7 @@ func NewSynchronizer(parentLogger logger.Logger,
 	leaderClient leader.Client,
 	internalProjectsClient project.Client) (*Synchronizer, error) {
 
+	parentLogger.DebugWith("Creating synchronizer")
 	newSynchronizer := Synchronizer{
 		logger:                 parentLogger.GetChild("leader-synchronizer-iguazio"),
 		platformConfiguration:  platformConfiguration,
@@ -37,6 +38,7 @@ func NewSynchronizer(parentLogger logger.Logger,
 }
 
 func (c *Synchronizer) Start() {
+	c.logger.DebugWith("Starting outside sync")
 	go c.synchronizationLoop()
 }
 
