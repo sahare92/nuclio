@@ -140,8 +140,15 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 		return errors.Wrapf(err, "Failed to get internal projects from namespace: %s", namespace)
 	}
 
-	// create projects that exist on the leader but weren't created internally
+	// filter modified projects
 	projectsToCreate, projectsToUpdate, projectsToDelete := c.getModifiedProjects(leaderProjects, internalProjects)
+	c.logger.DebugWith("Got synchronization loop modified projects",
+		"projectsToCreate", projectsToCreate,
+		"projectsToUpdate", projectsToUpdate,
+		"projectsToDelete", projectsToDelete)
+
+
+	// create projects that exist on the leader but weren't created internally
 	for _, projectInstance := range projectsToCreate {
 		projectInstance := projectInstance
 
