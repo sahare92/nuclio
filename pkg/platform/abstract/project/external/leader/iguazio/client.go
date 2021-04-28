@@ -166,7 +166,7 @@ func (c *Client) GetAll() ([]platform.Project, error) {
 	}
 
 	var projectsList ProjectList
-	if err := json.Unmarshal(responseBody, projectsList); err != nil {
+	if err := json.Unmarshal(responseBody, &projectsList); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal response body")
 	}
 
