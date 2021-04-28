@@ -31,10 +31,10 @@ func NewSynchronizer(parentLogger logger.Logger, platformConfiguration *platform
 }
 
 func (c *Synchronizer) Start() {
-	go c.synchronizeLoop()
+	go c.synchronizationLoop()
 }
 
-func (c *Synchronizer) synchronizeLoop() {
+func (c *Synchronizer) synchronizationLoop() {
 	synchronizationInterval := c.platformConfiguration.ProjectsLeader.SynchronizationInterval
 	if synchronizationInterval == 0 {
 		c.logger.InfoWith("Synchronization interval set to 0. (projects will not synchronize with leader)")
