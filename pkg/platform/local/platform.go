@@ -141,6 +141,7 @@ func NewPlatform(parentLogger logger.Logger,
 }
 
 func (p *Platform) Initialize() error {
+	p.Logger.DebugWith("initiazlied from local platform")
 	return p.projectsClient.Initialize()
 }
 

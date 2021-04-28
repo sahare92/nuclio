@@ -151,6 +151,7 @@ func NewPlatform(parentLogger logger.Logger,
 }
 
 func (p *Platform) Initialize() error {
+	p.Logger.DebugWith("initiazlied from kube platform")
 	if err := p.projectsClient.Initialize(); err != nil {
 		return errors.Wrap(err, "Failed to initialize projects client")
 	}
