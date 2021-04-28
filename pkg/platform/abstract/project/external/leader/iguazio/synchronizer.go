@@ -46,7 +46,7 @@ func (c *Synchronizer) synchronizeLoop() {
 	ticker := time.NewTicker(c.platformConfiguration.ProjectsLeader.SynchronizationInterval * time.Second)
 	for {
 		select {
-		case _ := <-ticker.C:
+		case _ = <-ticker.C:
 			if err := c.synchronizeProjectsAccordingToLeader(); err != nil {
 				c.logger.WarnWith("Failed to synchronize projects according to leader", "err", err)
 			}
@@ -54,27 +54,13 @@ func (c *Synchronizer) synchronizeLoop() {
 	}
 }
 
-func (c *Synchronizer) leaderProjectToProjectConfig(leaderProject Project) platform.ProjectConfig {
-	return platform.ProjectConfig{
-		Meta: platform.ProjectMeta{
-			Name: leaderProject.Data.Attributes.Name,
-			Namespace: leaderProject.Data.Attributes.Namespace,
-			Labels: leaderProject.Data.Attributes.Labels,
-			Annotations: leaderProject.Data.Attributes.Annotations,
-		},
-		Spec: platform.ProjectSpec{
-			Description: leaderProject.Data.Attributes.Description,
-		},
-	}
-}
-
 func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
-	projectsToCreate []platform.ProjectConfig,
-	projectsToUpdate []platform.ProjectConfig,
-	projectsToDelete []platform.ProjectConfig) {
+	projectsToCreate []*platform.ProjectConfig,
+	projectsToUpdate []*platform.ProjectConfig,
+	projectsToDelete []*platform.ProjectConfig) {
 
 	// populate leader projects map
-	leaderProjectsMap := map[string]platform.ProjectConfig{}
+	leaderProjectsMap := map[string]*platform.ProjectConfig{}
 	for _, leaderProject := range leaderProjects {
 		leaderProjectConfig := leaderProject.GetConfig()
 		if leaderProjectConfig == nil {
@@ -87,7 +73,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 			leaderProjectConfig.Meta.Name)
 
 		// add the key to the map
-		leaderProjectsMap[namespaceAndNameKey] = c.leaderProjectToProjectConfig(leaderProject)
+		leaderProjectsMap[namespaceAndNameKey] = leaderProjectConfig
 	}
 
 	// find created/updated/deleted projects
@@ -106,8 +92,8 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 		if !found {
 
 			// project exists internally but not on the leader - needs to be deleted
-			projectsToDelete = append(projectsToDelete, *internalProjectConfig)
-		} else if !reflect.DeepEqual(matchingLeaderProject, *internalProjectConfig) {
+			projectsToDelete = append(projectsToDelete, internalProjectConfig)
+		} else if !reflect.DeepEqual(*matchingLeaderProject, *internalProjectConfig) {
 
 			// if the project exists both internally and on the leader - update it if there're differences
 			projectsToUpdate = append(projectsToUpdate, matchingLeaderProject)
