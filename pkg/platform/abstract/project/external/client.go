@@ -36,7 +36,7 @@ func NewClient(parentLogger logger.Logger,
 		return nil, errors.Wrap(err, "Failed to create leader client")
 	}
 
-	newClient.synchronizer, err = iguazio.NewSynchronizer(parentLogger, platformConfiguration)
+	newClient.synchronizer, err = iguazio.NewSynchronizer(parentLogger, platformConfiguration, newClient.leaderClient, internalClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create synchronizer")
 	}

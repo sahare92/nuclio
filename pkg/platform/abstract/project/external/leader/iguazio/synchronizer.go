@@ -21,10 +21,16 @@ type Synchronizer struct {
 	internalProjectsClient project.Client
 }
 
-func NewSynchronizer(parentLogger logger.Logger, platformConfiguration *platformconfig.Config) (*Synchronizer, error) {
+func NewSynchronizer(parentLogger logger.Logger,
+	platformConfiguration *platformconfig.Config,
+	leaderClient leader.Client,
+	internalProjectsClient project.Client) (*Synchronizer, error) {
+
 	newSynchronizer := Synchronizer{
-		logger:                parentLogger.GetChild("leader-synchronizer-iguazio"),
-		platformConfiguration: platformConfiguration,
+		logger:                 parentLogger.GetChild("leader-synchronizer-iguazio"),
+		platformConfiguration:  platformConfiguration,
+		leaderClient:           leaderClient,
+		internalProjectsClient: internalProjectsClient,
 	}
 
 	return &newSynchronizer, nil
