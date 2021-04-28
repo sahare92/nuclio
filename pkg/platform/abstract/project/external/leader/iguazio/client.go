@@ -23,6 +23,7 @@ const (
 type Client struct {
 	logger                logger.Logger
 	platformConfiguration *platformconfig.Config
+	cachedCookie          *http.Cookie
 }
 
 func NewClient(parentLogger logger.Logger, platformConfiguration *platformconfig.Config) (*Client, error) {
@@ -38,6 +39,8 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	c.logger.DebugWith("Sending create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
 		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace)
+
+	c.cachedCookie = createProjectOptions.SessionCookie
 
 	// generate request body
 	body, err := c.generateProjectRequestBody(createProjectOptions.ProjectConfig)
@@ -71,6 +74,8 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) err
 	c.logger.DebugWith("Sending update project request to leader",
 		"name", updateProjectOptions.ProjectConfig.Meta.Name,
 		"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace)
+
+	c.cachedCookie = updateProjectOptions.SessionCookie
 
 	// generate request body
 	body, err := c.generateProjectRequestBody(&updateProjectOptions.ProjectConfig)
@@ -107,6 +112,8 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	c.logger.DebugWith("Sending delete project request to leader",
 		"name", deleteProjectOptions.Meta.Name)
 
+	c.cachedCookie = deleteProjectOptions.SessionCookie
+
 	// generate request body
 	body, err := c.generateProjectDeletionRequestBody(deleteProjectOptions.Meta.Name)
 	if err != nil {
@@ -133,6 +140,30 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 		"namespace", deleteProjectOptions.Meta.Namespace)
 
 	return nil
+}
+
+func (c *Client) GetAll() ([]Project, error) {
+	c.logger.DebugWith("Sending get all projects request to leader")
+
+	// send the request
+	headers := c.generateCommonRequestHeaders()
+	responseBody, _, err := common.SendHTTPRequest(http.MethodDelete,
+		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.APIAddress, "projects"),
+		nil,
+		headers,
+		[]*http.Cookie{c.cachedCookie},
+		http.StatusOK,
+		true)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to send request to leader")
+	}
+
+	var projectsList ProjectList
+	if err := json.Unmarshal(responseBody, projectsList); err != nil {
+		return nil, errors.Wrap(err, "Failed to unmarshal response body")
+	}
+
+	return projectsList.ToSingleProjectList(), nil
 }
 
 func (c *Client) generateCommonRequestHeaders() map[string]string {

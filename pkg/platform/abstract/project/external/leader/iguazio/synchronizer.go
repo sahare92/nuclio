@@ -1,0 +1,215 @@
+package iguazio
+
+import (
+	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/nuclio/nuclio/pkg/platform"
+	"github.com/nuclio/nuclio/pkg/platform/abstract/project"
+	"github.com/nuclio/nuclio/pkg/platform/abstract/project/external/leader"
+	"github.com/nuclio/nuclio/pkg/platformconfig"
+
+	"github.com/nuclio/errors"
+	"github.com/nuclio/logger"
+)
+
+type Synchronizer struct {
+	logger                 logger.Logger
+	platformConfiguration  *platformconfig.Config
+	leaderClient           leader.Client
+	internalProjectsClient project.Client
+}
+
+func NewSynchronizer(parentLogger logger.Logger, platformConfiguration *platformconfig.Config) (*Synchronizer, error) {
+	newSynchronizer := Synchronizer{
+		logger:                parentLogger.GetChild("leader-synchronizer-iguazio"),
+		platformConfiguration: platformConfiguration,
+	}
+
+	return &newSynchronizer, nil
+}
+
+func (c *Synchronizer) Start() {
+	go c.synchronizeLoop()
+}
+
+func (c *Synchronizer) synchronizeLoop() {
+	synchronizationInterval := c.platformConfiguration.ProjectsLeader.SynchronizationInterval
+	if synchronizationInterval == 0 {
+		c.logger.InfoWith("Synchronization interval set to 0. (projects will not synchronize with leader)")
+		return
+	}
+
+	c.logger.InfoWith("Starting synchronization loop", "synchronizationInterval", synchronizationInterval)
+
+	ticker := time.NewTicker(c.platformConfiguration.ProjectsLeader.SynchronizationInterval * time.Second)
+	for {
+		select {
+		case _ := <-ticker.C:
+			if err := c.synchronizeProjectsAccordingToLeader(); err != nil {
+				c.logger.WarnWith("Failed to synchronize projects according to leader", "err", err)
+			}
+		}
+	}
+}
+
+func (c *Synchronizer) leaderProjectToProjectConfig(leaderProject Project) platform.ProjectConfig {
+	return platform.ProjectConfig{
+		Meta: platform.ProjectMeta{
+			Name: leaderProject.Data.Attributes.Name,
+			Namespace: leaderProject.Data.Attributes.Namespace,
+			Labels: leaderProject.Data.Attributes.Labels,
+			Annotations: leaderProject.Data.Attributes.Annotations,
+		},
+		Spec: platform.ProjectSpec{
+			Description: leaderProject.Data.Attributes.Description,
+		},
+	}
+}
+
+func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
+	projectsToCreate []platform.ProjectConfig,
+	projectsToUpdate []platform.ProjectConfig,
+	projectsToDelete []platform.ProjectConfig) {
+
+	// populate leader projects map
+	leaderProjectsMap := map[string]platform.ProjectConfig{}
+	for _, leaderProject := range leaderProjects {
+		leaderProjectConfig := leaderProject.GetConfig()
+		if leaderProjectConfig == nil {
+			continue
+		}
+
+		// generate a unique namespace+name key for the project
+		namespaceAndNameKey := fmt.Sprintf("%s:%s",
+			leaderProjectConfig.Meta.Namespace,
+			leaderProjectConfig.Meta.Name)
+
+		// add the key to the map
+		leaderProjectsMap[namespaceAndNameKey] = c.leaderProjectToProjectConfig(leaderProject)
+	}
+
+	// find created/updated/deleted projects
+	for _, internalProject := range internalProjects {
+		internalProjectConfig := internalProject.GetConfig()
+		if internalProjectConfig == nil {
+			continue
+		}
+
+		// same key as generated above
+		namespaceAndNameKey := fmt.Sprintf("%s:%s",
+			internalProjectConfig.Meta.Namespace,
+			internalProjectConfig.Meta.Name)
+
+		matchingLeaderProject, found := leaderProjectsMap[namespaceAndNameKey]
+		if !found {
+
+			// project exists internally but not on the leader - needs to be deleted
+			projectsToDelete = append(projectsToDelete, *internalProjectConfig)
+		} else if !reflect.DeepEqual(matchingLeaderProject, *internalProjectConfig) {
+
+			// if the project exists both internally and on the leader - update it if there're differences
+			projectsToUpdate = append(projectsToUpdate, matchingLeaderProject)
+		}
+
+		// delete this key from the map, so we'd know that it exists internally (those we didn't visit should be created)
+		delete(leaderProjectsMap, namespaceAndNameKey)
+	}
+
+	// iterate over all projects that doesn't exist internally (which weren't deleted before) and add them to projectsToCreate
+	for _, leaderProjectNotExistsInternally := range leaderProjectsMap {
+		projectsToCreate = append(projectsToCreate, leaderProjectNotExistsInternally)
+	}
+
+	return
+}
+
+func (c *Synchronizer) getDeletedProjects(leaderProjects []Project,
+	internalProjects []platform.Project) []platform.ProjectConfig {
+
+	return nil
+}
+
+func (c *Synchronizer) getUpdatedProjects(leaderProjects []Project,
+	internalProjects []platform.Project) []platform.ProjectConfig {
+
+	return nil
+}
+
+func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
+
+	// fetch projects from leader
+	leaderProjects, err := c.leaderClient.GetAll()
+	if err != nil {
+		return errors.Wrap(err, "Failed to get leader projects")
+	}
+
+	// fetch internal projects
+	// TODO: fetch projects from every managed namespace - could be done by implementing GetAll()
+	namespace := "default-tenant"
+	internalProjects, err :=
+		c.internalProjectsClient.Get(&platform.GetProjectsOptions{Meta: platform.ProjectMeta{Namespace: "default-tenant"}})
+	if err != nil {
+		return errors.Wrapf(err, "Failed to get internal projects from namespace: %s", namespace)
+	}
+
+	// create projects that exist on the leader but weren't created internally
+	projectsToCreate, projectsToUpdate, projectsToDelete := c.getModifiedProjects(leaderProjects, internalProjects)
+	for _, projectInstance := range projectsToCreate {
+		projectInstance := projectInstance
+
+		go func() {
+			createProjectConfig := &platform.CreateProjectOptions{
+				ProjectConfig: &platform.ProjectConfig{
+					Meta: projectInstance.Meta,
+					Spec: projectInstance.Spec},
+			}
+			if _, err := c.internalProjectsClient.Create(createProjectConfig); err != nil {
+				c.logger.WarnWith("Failed to create project (during sync)",
+					"name", createProjectConfig.ProjectConfig.Meta.Name,
+					"namespace", createProjectConfig.ProjectConfig.Meta.Namespace,
+					"err", err)
+			}
+		}()
+	}
+
+	// delete projects that exist internally but not on the leader (deleted)
+	for _, projectInstance := range projectsToDelete {
+		projectInstance := projectInstance
+
+		go func() {
+			deleteProjectOptions := &platform.DeleteProjectOptions{
+				Meta: projectInstance.Meta,
+			}
+			if err := c.internalProjectsClient.Delete(deleteProjectOptions); err != nil {
+				c.logger.WarnWith("Failed to delete project (during sync)",
+					"name", deleteProjectOptions.Meta.Name,
+					"namespace", deleteProjectOptions.Meta.Namespace,
+					"err", err)
+			}
+		}()
+	}
+
+	// update projects that exist both internally and on the leader
+	for _, projectInstance := range projectsToUpdate {
+		projectInstance := projectInstance
+
+		go func() {
+			updateProjectOptions := &platform.UpdateProjectOptions{
+				ProjectConfig: platform.ProjectConfig{
+					Meta: projectInstance.Meta,
+					Spec: projectInstance.Spec,
+				},
+			}
+			if _, err := c.internalProjectsClient.Update(updateProjectOptions); err != nil {
+				c.logger.WarnWith("Failed to update project (during sync)",
+					"name", updateProjectOptions.ProjectConfig.Meta.Name,
+					"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace,
+					"err", err)
+			}
+		}()
+	}
+
+	return nil
+}

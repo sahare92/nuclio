@@ -1,11 +1,27 @@
 package iguazio
 
+import "github.com/nuclio/nuclio/pkg/platform"
+
 const (
 	ProjectType = "project"
 )
 
 type Project struct {
 	Data ProjectData `json:"data,omitempty"`
+}
+
+func (pl *Project) GetConfig() *platform.ProjectConfig {
+	return &platform.ProjectConfig{
+		Meta: platform.ProjectMeta{
+			Name: pl.Data.Attributes.Name,
+			Namespace: pl.Data.Attributes.Namespace,
+			Annotations: pl.Data.Attributes.Annotations,
+			Labels: pl.Data.Attributes.Labels,
+		},
+		Spec: platform.ProjectSpec{
+			Description: pl.Data.Attributes.Description,
+		},
+	}
 }
 
 type ProjectData struct {
@@ -24,4 +40,19 @@ type ProjectAttributes struct {
 
 type NuclioProject struct {
 	// currently no nuclio specific fields are needed
+}
+
+type ProjectList struct {
+	Data []ProjectData `json:"data,omitempty"`
+}
+
+// ProjectList -> []Project
+func (pl *ProjectList) ToSingleProjectList() []Project {
+	var projects []Project
+
+	for _, projectData := range pl.Data {
+		projects = append(projects, Project{Data:projectData})
+	}
+
+	return projects
 }
