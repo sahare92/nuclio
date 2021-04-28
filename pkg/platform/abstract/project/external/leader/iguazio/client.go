@@ -147,13 +147,14 @@ func (c *Client) GetAll() ([]Project, error) {
 
 	// send the request
 	headers := c.generateCommonRequestHeaders()
-	responseBody, _, err := common.SendHTTPRequest(http.MethodDelete,
+	responseBody, _, err := common.SendHTTPRequest(http.MethodGet,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.APIAddress, "projects"),
 		nil,
 		headers,
 		[]*http.Cookie{c.cachedCookie},
 		http.StatusOK,
-		true)
+		true,
+		DefaultRequestTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to send request to leader")
 	}
