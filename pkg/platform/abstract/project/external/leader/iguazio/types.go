@@ -47,11 +47,11 @@ type ProjectList struct {
 }
 
 // ProjectList -> []Project
-func (pl *ProjectList) ToSingleProjectList() []Project {
-	var projects []Project
+func (pl *ProjectList) ToSingleProjectList() []platform.Project {
+	var projects []platform.Project
 
 	for _, projectData := range pl.Data {
-		projects = append(projects, Project{Data:projectData})
+		projects = append(projects, &Project{Data:projectData})
 	}
 
 	return projects

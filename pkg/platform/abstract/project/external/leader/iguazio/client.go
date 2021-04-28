@@ -142,7 +142,7 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	return nil
 }
 
-func (c *Client) GetAll() ([]Project, error) {
+func (c *Client) GetAll() ([]platform.Project, error) {
 	c.logger.DebugWith("Sending get all projects request to leader")
 
 	// send the request
