@@ -71,6 +71,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 	leaderProjectsMap := map[string]*platform.ProjectConfig{}
 	for _, leaderProject := range leaderProjects {
 		leaderProjectConfig := leaderProject.GetConfig()
+		c.logger.DebugWith("Leader project config instance", "leaderProjectConfig", *leaderProjectConfig)
 		if leaderProjectConfig == nil {
 			continue
 		}
@@ -87,6 +88,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 	// find created/updated/deleted projects
 	for _, internalProject := range internalProjects {
 		internalProjectConfig := internalProject.GetConfig()
+		c.logger.DebugWith("Internal project config instance", "internalProjectConfig", *internalProjectConfig)
 		if internalProjectConfig == nil {
 			continue
 		}
