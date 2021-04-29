@@ -181,17 +181,7 @@ func (c *Client) generateCommonRequestHeaders() map[string]string {
 }
 
 func (c *Client) generateProjectRequestBody(projectConfig *platform.ProjectConfig) ([]byte, error) {
-	project := Project{
-		Data: ProjectData{
-			Type: ProjectType,
-			Attributes: ProjectAttributes{
-				Name:        projectConfig.Meta.Name,
-				Labels:      projectConfig.Meta.Labels,
-				Annotations: projectConfig.Meta.Annotations,
-				Description: projectConfig.Spec.Description,
-			},
-		},
-	}
+	project := CreateProjectFromProjectConfig(projectConfig)
 
 	c.enrichProjectWithNuclioFields(&project)
 
