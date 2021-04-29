@@ -155,9 +155,9 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	// filter modified projects
 	projectsToCreate, projectsToUpdate, projectsToDelete := c.getModifiedProjects(leaderProjects, internalProjects)
 	c.logger.DebugWith("Got synchronization loop modified projects",
-		"projectsToCreate", projectsToCreate,
-		"projectsToUpdate", projectsToUpdate,
-		"projectsToDelete", projectsToDelete)
+		"projectsToCreateNum", len(projectsToCreate),
+		"projectsToUpdateNum", len(projectsToUpdate),
+		"projectsToDeleteNum", len(projectsToDelete))
 
 
 	// create projects that exist on the leader but weren't created internally
