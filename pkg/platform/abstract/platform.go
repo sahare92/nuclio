@@ -750,8 +750,6 @@ func (ap *Platform) GetProjectResources(projectMeta *platform.ProjectMeta) ([]pl
 }
 
 func (ap *Platform) EnsureDefaultProjectExistence() error {
-	ap.Logger.DebugWith("Ensuring default project existence")
-
 	resolvedNamespace := ap.platform.ResolveDefaultNamespace(ap.DefaultNamespace)
 
 	projects, err := ap.platform.GetProjects(&platform.GetProjectsOptions{

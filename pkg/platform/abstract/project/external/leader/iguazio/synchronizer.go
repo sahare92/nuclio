@@ -163,56 +163,56 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	for _, projectInstance := range projectsToCreate {
 		projectInstance := projectInstance
 		c.logger.DebugWith("Syncing create project", "projectInstance", *projectInstance)
-		go func() {
-			createProjectConfig := &platform.CreateProjectOptions{
-				ProjectConfig: &platform.ProjectConfig{
-					Meta: projectInstance.Meta,
-					Spec: projectInstance.Spec},
-			}
-			if _, err := c.internalProjectsClient.Create(createProjectConfig); err != nil {
-				c.logger.WarnWith("Failed to create project (during sync)",
-					"name", createProjectConfig.ProjectConfig.Meta.Name,
-					"namespace", createProjectConfig.ProjectConfig.Meta.Namespace,
-					"err", err)
-			}
-		}()
+		//go func() {
+		//	createProjectConfig := &platform.CreateProjectOptions{
+		//		ProjectConfig: &platform.ProjectConfig{
+		//			Meta: projectInstance.Meta,
+		//			Spec: projectInstance.Spec},
+		//	}
+		//	if _, err := c.internalProjectsClient.Create(createProjectConfig); err != nil {
+		//		c.logger.WarnWith("Failed to create project (during sync)",
+		//			"name", createProjectConfig.ProjectConfig.Meta.Name,
+		//			"namespace", createProjectConfig.ProjectConfig.Meta.Namespace,
+		//			"err", err)
+		//	}
+		//}()
 	}
 
 	// delete projects that exist internally but not on the leader (deleted)
 	for _, projectInstance := range projectsToDelete {
 		projectInstance := projectInstance
 		c.logger.DebugWith("Syncing delete project", "projectInstance", *projectInstance)
-		go func() {
-			deleteProjectOptions := &platform.DeleteProjectOptions{
-				Meta: projectInstance.Meta,
-			}
-			if err := c.internalProjectsClient.Delete(deleteProjectOptions); err != nil {
-				c.logger.WarnWith("Failed to delete project (during sync)",
-					"name", deleteProjectOptions.Meta.Name,
-					"namespace", deleteProjectOptions.Meta.Namespace,
-					"err", err)
-			}
-		}()
+		//go func() {
+		//	deleteProjectOptions := &platform.DeleteProjectOptions{
+		//		Meta: projectInstance.Meta,
+		//	}
+		//	if err := c.internalProjectsClient.Delete(deleteProjectOptions); err != nil {
+		//		c.logger.WarnWith("Failed to delete project (during sync)",
+		//			"name", deleteProjectOptions.Meta.Name,
+		//			"namespace", deleteProjectOptions.Meta.Namespace,
+		//			"err", err)
+		//	}
+		//}()
 	}
 
 	// update projects that exist both internally and on the leader
 	for _, projectInstance := range projectsToUpdate {
 		projectInstance := projectInstance
 		c.logger.DebugWith("Syncing update project", "projectInstance", *projectInstance)
-		go func() {
-			updateProjectOptions := &platform.UpdateProjectOptions{
-				ProjectConfig: platform.ProjectConfig{
-					Meta: projectInstance.Meta,
-					Spec: projectInstance.Spec,
-				},
-			}
-			if _, err := c.internalProjectsClient.Update(updateProjectOptions); err != nil {
-				c.logger.WarnWith("Failed to update project (during sync)",
-					"name", updateProjectOptions.ProjectConfig.Meta.Name,
-					"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace,
-					"err", err)
-			}
-		}()
+		//go func() {
+		//	updateProjectOptions := &platform.UpdateProjectOptions{
+		//		ProjectConfig: platform.ProjectConfig{
+		//			Meta: projectInstance.Meta,
+		//			Spec: projectInstance.Spec,
+		//		},
+		//	}
+		//	if _, err := c.internalProjectsClient.Update(updateProjectOptions); err != nil {
+		//		c.logger.WarnWith("Failed to update project (during sync)",
+		//			"name", updateProjectOptions.ProjectConfig.Meta.Name,
+		//			"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace,
+		//			"err", err)
+		//	}
+		//}()
 	}
 
 	return nil
