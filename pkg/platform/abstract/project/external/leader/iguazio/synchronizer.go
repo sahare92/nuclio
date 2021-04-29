@@ -159,11 +159,10 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 		"projectsToUpdateNum", len(projectsToUpdate),
 		"projectsToDeleteNum", len(projectsToDelete))
 
-
 	// create projects that exist on the leader but weren't created internally
 	for _, projectInstance := range projectsToCreate {
 		projectInstance := projectInstance
-
+		c.logger.DebugWith("Syncing create project", "projectInstance", *projectInstance)
 		go func() {
 			createProjectConfig := &platform.CreateProjectOptions{
 				ProjectConfig: &platform.ProjectConfig{
@@ -182,7 +181,7 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	// delete projects that exist internally but not on the leader (deleted)
 	for _, projectInstance := range projectsToDelete {
 		projectInstance := projectInstance
-
+		c.logger.DebugWith("Syncing delete project", "projectInstance", *projectInstance)
 		go func() {
 			deleteProjectOptions := &platform.DeleteProjectOptions{
 				Meta: projectInstance.Meta,
@@ -199,7 +198,7 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	// update projects that exist both internally and on the leader
 	for _, projectInstance := range projectsToUpdate {
 		projectInstance := projectInstance
-
+		c.logger.DebugWith("Syncing update project", "projectInstance", *projectInstance)
 		go func() {
 			updateProjectOptions := &platform.UpdateProjectOptions{
 				ProjectConfig: platform.ProjectConfig{
