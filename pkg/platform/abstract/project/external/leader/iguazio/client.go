@@ -55,6 +55,7 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) err
 	if createProjectOptions.SessionCookie == nil {
 		createProjectOptions.SessionCookie = c.cachedCookie
 	}
+
 	responseBody, _, err := common.SendHTTPRequest(http.MethodPost,
 		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.APIAddress, "projects"),
 		body,

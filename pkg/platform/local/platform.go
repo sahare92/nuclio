@@ -231,7 +231,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		}
 
 		// create the function in the store
-		if err = p.localStore.CreateOrUpdateFunction(&functionconfig.ConfigWithStatus{
+		if err := p.localStore.CreateOrUpdateFunction(&functionconfig.ConfigWithStatus{
 			Config: createFunctionOptions.FunctionConfig,
 			Status: functionconfig.Status{
 				State: functionconfig.FunctionStateBuilding,
@@ -268,9 +268,7 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 
 		var createFunctionResult *platform.CreateFunctionResult
 		var deployErr error
-		functionStatus := functionconfig.Status{
-			State: functionconfig.FunctionStateImported,
-		}
+		var functionStatus functionconfig.Status
 
 		if !skipFunctionDeploy {
 			createFunctionResult, deployErr = p.deployFunction(createFunctionOptions, previousHTTPPort)
@@ -279,12 +277,16 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 				return nil, deployErr
 			}
 
-			functionStatus = functionconfig.Status{
-				HTTPPort: createFunctionResult.Port,
-				State:    functionconfig.FunctionStateReady,
+			functionStatus.HTTPPort = createFunctionResult.Port
+			functionStatus.State = functionconfig.FunctionStateReady
+
+			if err := p.populateFunctionInvocationStatus(&functionStatus,
+				createFunctionResult); err != nil {
+				return nil, errors.Wrap(err, "Failed to populate function invocation status")
 			}
 		} else {
 			p.Logger.Info("Skipping function deployment")
+			functionStatus.State = functionconfig.FunctionStateImported
 			createFunctionResult = &platform.CreateFunctionResult{
 				CreateFunctionBuildResult: platform.CreateFunctionBuildResult{
 					Image:                 createFunctionOptions.FunctionConfig.Spec.Image,
@@ -294,21 +296,22 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 		}
 
 		// update the function
-		if err = p.localStore.CreateOrUpdateFunction(&functionconfig.ConfigWithStatus{
+		if err := p.localStore.CreateOrUpdateFunction(&functionconfig.ConfigWithStatus{
 			Config: createFunctionOptions.FunctionConfig,
 			Status: functionStatus,
 		}); err != nil {
 			return nil, errors.Wrap(err, "Failed to update a function with state")
 		}
 
+		createFunctionResult.FunctionStatus = functionStatus
 		return createFunctionResult, nil
 	}
 
 	// If needed, load any docker image from archive into docker
 	if createFunctionOptions.InputImageFile != "" {
-		p.Logger.InfoWith("Loading docker image from archive", "input", createFunctionOptions.InputImageFile)
-		err := p.dockerClient.Load(createFunctionOptions.InputImageFile)
-		if err != nil {
+		p.Logger.InfoWith("Loading docker image from archive",
+			"input", createFunctionOptions.InputImageFile)
+		if err := p.dockerClient.Load(createFunctionOptions.InputImageFile); err != nil {
 			return nil, errors.Wrap(err, "Failed to load a Docker image from an archive")
 		}
 	}
@@ -1110,5 +1113,29 @@ func (p *Platform) enrichAndValidateFunctionConfig(functionConfig *functionconfi
 		return errors.Wrap(err, "Failed to validate a function configuration")
 	}
 
+	return nil
+}
+
+func (p *Platform) populateFunctionInvocationStatus(functionInvocation *functionconfig.Status,
+	createFunctionResults *platform.CreateFunctionResult) error {
+
+	externalIPAddresses, err := p.GetExternalIPAddresses()
+	if err != nil {
+		return err
+	}
+
+	addresses, err := p.dockerClient.GetContainerIPAddresses(createFunctionResults.ContainerID)
+	if err != nil {
+		return errors.Wrap(err, "Failed to get container network addresses")
+	}
+
+	functionInvocation.InternalInvocationURLs = addresses
+	functionInvocation.ExternalInvocationURLs = []string{}
+	for _, externalIPAddress := range externalIPAddresses {
+		if externalIPAddress != "" {
+			functionInvocation.ExternalInvocationURLs = append(functionInvocation.ExternalInvocationURLs,
+				fmt.Sprintf("%s:%d", externalIPAddress, createFunctionResults.Port))
+		}
+	}
 	return nil
 }

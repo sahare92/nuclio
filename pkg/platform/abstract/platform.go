@@ -197,8 +197,9 @@ func (ap *Platform) HandleDeployFunction(existingFunctionConfig *functionconfig.
 	// indicate that we're done
 	createFunctionOptions.Logger.InfoWith("Function deploy complete",
 		"functionName", deployResult.UpdatedFunctionConfig.Meta.Name,
-		"httpPort", deployResult.Port)
-
+		"httpPort", deployResult.Port,
+		"internalInvocationURLs", deployResult.FunctionStatus.InternalInvocationURLs,
+		"externalInvocationURLs", deployResult.FunctionStatus.ExternalInvocationURLs)
 	return deployResult, nil
 }
 
@@ -433,7 +434,9 @@ func (ap *Platform) ResolveReservedResourceNames() []string {
 }
 
 // CreateFunctionInvocation will invoke a previously deployed function
-func (ap *Platform) CreateFunctionInvocation(createFunctionInvocationOptions *platform.CreateFunctionInvocationOptions) (*platform.CreateFunctionInvocationResult, error) {
+func (ap *Platform) CreateFunctionInvocation(
+	createFunctionInvocationOptions *platform.CreateFunctionInvocationOptions) (
+	*platform.CreateFunctionInvocationResult, error) {
 	if createFunctionInvocationOptions.Headers == nil {
 		createFunctionInvocationOptions.Headers = http.Header{}
 	}
