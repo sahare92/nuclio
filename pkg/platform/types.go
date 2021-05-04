@@ -166,9 +166,15 @@ type ProjectSpec struct {
 	Description string `json:"description,omitempty"`
 }
 
+type ProjectStatus struct {
+	AdminStatus       string `json:"adminStatus,omitempty"`
+	OperationalStatus string `json:"operationalStatus,omitempty"`
+}
+
 type ProjectConfig struct {
-	Meta ProjectMeta `json:"meta"`
-	Spec ProjectSpec `json:"spec"`
+	Meta   ProjectMeta   `json:"meta"`
+	Spec   ProjectSpec   `json:"spec"`
+	Status ProjectStatus `json:"status,omitempty"`
 }
 
 func (pc *ProjectConfig) Scrub() {

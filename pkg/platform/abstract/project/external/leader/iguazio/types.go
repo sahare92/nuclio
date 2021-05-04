@@ -35,6 +35,10 @@ func (pl *Project) GetConfig() *platform.ProjectConfig {
 		Spec: platform.ProjectSpec{
 			Description: pl.Data.Attributes.Description,
 		},
+		Status: platform.ProjectStatus{
+			AdminStatus: pl.Data.Attributes.AdminStatus,
+			OperationalStatus: pl.Data.Attributes.OperationalStatus,
+		},
 	}
 }
 
@@ -64,12 +68,14 @@ type ProjectData struct {
 }
 
 type ProjectAttributes struct {
-	Name          string        `json:"name,omitempty"`
-	Namespace     string        `json:"namespace,omitempty"`
-	Labels        []Label       `json:"labels,omitempty"`
-	Annotations   []Label       `json:"annotations,omitempty"`
-	Description   string        `json:"description,omitempty"`
-	NuclioProject NuclioProject `json:"nuclio_project,omitempty"`
+	Name              string        `json:"name,omitempty"`
+	Namespace         string        `json:"namespace,omitempty"`
+	Labels            []Label       `json:"labels,omitempty"`
+	Annotations       []Label       `json:"annotations,omitempty"`
+	Description       string        `json:"description,omitempty"`
+	AdminStatus       string        `json:"admin_status,omitempty"`
+	OperationalStatus string        `json:"operational_status,omitempty"`
+	NuclioProject     NuclioProject `json:"nuclio_project,omitempty"`
 }
 
 type Label struct {

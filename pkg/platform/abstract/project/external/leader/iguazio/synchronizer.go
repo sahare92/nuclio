@@ -72,7 +72,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 	for _, leaderProject := range leaderProjects {
 		leaderProjectConfig := leaderProject.GetConfig()
 		c.logger.DebugWith("Leader project config instance", "leaderProjectConfig", *leaderProjectConfig)
-		if leaderProjectConfig == nil {
+		if leaderProjectConfig == nil || leaderProjectConfig.Status.OperationalStatus != "online" {
 			continue
 		}
 
