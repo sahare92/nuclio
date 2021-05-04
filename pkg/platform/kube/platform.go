@@ -898,6 +898,12 @@ func (p *Platform) ResolveDefaultNamespace(defaultNamespace string) string {
 
 // GetNamespaces returns all the namespaces in the platform
 func (p *Platform) GetNamespaces() ([]string, error) {
+
+	// if managed namespaces were given explicitly in platform config - return them
+	if p.Config.ManagedNamespaces != nil {
+		return p.Config.ManagedNamespaces, nil
+	}
+
 	namespaces, err := p.consumer.KubeClientSet.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		if apierrors.IsForbidden(err) {

@@ -2,7 +2,6 @@ package project
 
 import (
 	"fmt"
-
 	"github.com/nuclio/nuclio/pkg/platform"
 	abstractproject "github.com/nuclio/nuclio/pkg/platform/abstract/project"
 	nuclioio "github.com/nuclio/nuclio/pkg/platform/kube/apis/nuclio.io/v1beta1"
@@ -16,23 +15,32 @@ import (
 )
 
 type Client struct {
-	Logger   logger.Logger
-	platform platform.Platform
-	consumer *client.Consumer
+	Logger        logger.Logger
+	platform      platform.Platform
+	consumer      *client.Consumer
+	projectsCache []platform.Project
 }
 
-func NewClient(parentLogger logger.Logger, platform platform.Platform, consumer *client.Consumer) (abstractproject.Client, error) {
+func NewClient(parentLogger logger.Logger, platformInstance platform.Platform, consumer *client.Consumer) (abstractproject.Client, error) {
 	newClient := Client{
 		Logger:   parentLogger.GetChild("projects-client"),
 		consumer: consumer,
-		platform: platform,
+		platform: platformInstance,
 	}
 
 	return &newClient, nil
 }
 
 func (c *Client) Initialize() error {
-	return c.platform.EnsureDefaultProjectExistence()
+	if err := c.platform.EnsureDefaultProjectExistence(); err != nil {
+		return errors.Wrap(err, "Failed to ensure default project existence")
+	}
+
+	if err := c.syncProjectsCache(); err != nil {
+		return errors.Wrap(err, "Failed to sync projects cache")
+	}
+
+	return nil
 }
 
 func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) (platform.Project, error) {
@@ -46,7 +54,15 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) (pl
 		return nil, errors.Wrap(err, "Failed to create nuclio project")
 	}
 
-	return c.nuclioProjectToPlatformProject(nuclioProject)
+	platformProject, err :=  c.nuclioProjectToPlatformProject(nuclioProject)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to convert nuclio project to platform project")
+	}
+
+	// add project to cache
+	c.addProjectToCache(platformProject)
+
+	return platformProject, nil
 }
 
 func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) (platform.Project, error) {
@@ -70,7 +86,15 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) (pl
 		return nil, errors.Wrap(err, "Failed to update nuclio project")
 	}
 
-	return c.nuclioProjectToPlatformProject(nuclioProject)
+	platformProject, err :=  c.nuclioProjectToPlatformProject(nuclioProject)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to convert nuclio project to platform project")
+	}
+
+	// update project in cache
+	c.updateProjectInCache(platformProject)
+
+	return platformProject, nil
 }
 
 func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) error {
@@ -87,6 +111,9 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 			deleteProjectOptions.Meta.Namespace)
 	}
 
+	// delete project from cache
+	c.deleteProjectFromCache(deleteProjectOptions.Meta.Namespace, deleteProjectOptions.Meta.Name)
+
 	if deleteProjectOptions.WaitForResourcesDeletionCompletion {
 		return c.platform.WaitForProjectResourcesDeletion(&deleteProjectOptions.Meta,
 			deleteProjectOptions.WaitForResourcesDeletionCompletionDuration)
@@ -99,8 +126,14 @@ func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platfor
 	var platformProjects []platform.Project
 	var projects []nuclioio.NuclioProject
 
+	// first, try getting projects from cache
+	if c.projectsCache != nil {
+		return c.getProjectsFromCache(getProjectsOptions.Meta.Namespace, getProjectsOptions.Meta.Name), nil
+	}
+
 	// if identifier specified, we need to get a single NuclioProject
 	if getProjectsOptions.Meta.Name != "" {
+
 
 		// get specific NuclioProject CR
 		projectInstance, err := c.consumer.NuclioClientSet.NuclioV1beta1().
@@ -146,6 +179,73 @@ func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platfor
 	}
 
 	return platformProjects, nil
+}
+
+func (c *Client) syncProjectsCache() error {
+	c.projectsCache = []platform.Project{}
+
+	// get all managed namespaces
+	namespaces, err := c.platform.GetNamespaces()
+	if err != nil {
+		return errors.Wrap(err, "Failed to get namespaces")
+	}
+
+	for _, namespace := range namespaces {
+		projectsInNamespace, err := c.Get(&platform.GetProjectsOptions{Meta: platform.ProjectMeta{Namespace: namespace}})
+		if err != nil {
+			return errors.Wrapf(err, "Failed to get projects in namespace: %s", namespace)
+		}
+
+		c.projectsCache = append(c.projectsCache, projectsInNamespace...)
+	}
+
+	return nil
+}
+
+func (c *Client) addProjectToCache(projectInstance platform.Project) {
+	c.projectsCache = append(c.projectsCache, projectInstance)
+}
+
+func (c *Client) updateProjectInCache(projectInstance platform.Project) {
+
+	// delete project and re-add it to update the cache
+	c.deleteProjectFromCache(projectInstance.GetConfig().Meta.Namespace, projectInstance.GetConfig().Meta.Name)
+	c.addProjectToCache(projectInstance)
+}
+
+func (c *Client) deleteProjectFromCache(namespace, name string) {
+	newProjectsCache := []platform.Project{}
+
+	for _, projectInstance := range c.projectsCache {
+		projectConfig := projectInstance.GetConfig()
+		if projectConfig.Meta.Namespace == namespace && projectConfig.Meta.Name == name {
+			continue
+		}
+		newProjectsCache = append(newProjectsCache, projectInstance)
+	}
+
+	c.projectsCache = newProjectsCache
+}
+
+func (c *Client) getProjectsFromCache(namespace, name string) []platform.Project {
+	matchingProjects := []platform.Project{}
+
+	for _, projectInstance := range c.projectsCache {
+		projectConfig := projectInstance.GetConfig()
+		if projectConfig.Meta.Namespace != namespace {
+			continue
+		}
+
+		if name != "" {
+			if projectConfig.Meta.Name == name {
+				return []platform.Project{projectInstance}
+			}
+		}
+
+		matchingProjects = append(matchingProjects, projectInstance)
+	}
+
+	return matchingProjects
 }
 
 func (c *Client) platformProjectToProject(platformProject *platform.ProjectConfig, project *nuclioio.NuclioProject) {
