@@ -34,6 +34,6 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	return nuclio.ErrNotImplemented
 }
 
-func (c *Client) GetAll() ([]platform.Project, error) {
+func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error) {
 	return nil, nuclio.ErrNotImplemented
 }
