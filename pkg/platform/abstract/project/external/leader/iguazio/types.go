@@ -101,6 +101,11 @@ func (pl *ProjectList) ToSingleProjectList() []platform.Project {
 	var projects []platform.Project
 
 	for _, projectData := range pl.Data {
+
+		// TODO: Remove this once zebo is sending namesapces
+		if projectData.Attributes.Namespace == "" {
+			projectData.Attributes.Namespace = "default-tenant"
+		}
 		projects = append(projects, &Project{Data:projectData})
 	}
 
