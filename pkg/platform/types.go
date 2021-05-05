@@ -19,6 +19,7 @@ package platform
 // use k8s structure definitions for now. In the future, duplicate them for cleanliness
 import (
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/functionconfig"
@@ -179,6 +180,10 @@ type ProjectConfig struct {
 
 func (pc *ProjectConfig) Scrub() {
 	pc.Meta.ResourceVersion = ""
+}
+
+func (pc *ProjectConfig) IsEqualContent(other *ProjectConfig) bool {
+	return reflect.DeepEqual(pc.Meta, other.Meta) && pc.Spec == other.Spec
 }
 
 type RequestOrigin string
