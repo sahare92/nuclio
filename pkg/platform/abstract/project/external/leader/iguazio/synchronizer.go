@@ -14,10 +14,11 @@ import (
 )
 
 type Synchronizer struct {
-	logger                 logger.Logger
-	platformConfiguration  *platformconfig.Config
-	leaderClient           leader.Client
-	internalProjectsClient project.Client
+	logger                      logger.Logger
+	platformConfiguration       *platformconfig.Config
+	leaderClient                leader.Client
+	internalProjectsClient      project.Client
+	lastSuccessfulSyncTimestamp string
 }
 
 func NewSynchronizer(parentLogger logger.Logger,
@@ -56,9 +57,27 @@ func (c *Synchronizer) synchronizationLoop() {
 		case _ = <-ticker.C:
 			if err := c.synchronizeProjectsAccordingToLeader(); err != nil {
 				c.logger.WarnWith("Failed to synchronize projects according to leader", "err", err)
+				continue
 			}
+
+			// update last successful sync timestamp
+			c.updateLastSuccessfulSyncTimestamp()
 		}
 	}
+}
+
+func (c *Synchronizer) updateLastSuccessfulSyncTimestamp() {
+	loc, err := time.LoadLocation("GMT")
+	if err != nil {
+		c.logger.WarnWith("Failed to load GMT location (Should not happen on unix based systems). " +
+			"Skipping last successful sync timestamp update",
+			"err", err)
+		return
+	}
+
+	t := time.Now().In(loc)
+
+	c.lastSuccessfulSyncTimestamp = t.Format(time.RFC3339)
 }
 
 func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
@@ -111,22 +130,10 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 	return
 }
 
-func (c *Synchronizer) getDeletedProjects(leaderProjects []Project,
-	internalProjects []platform.Project) []platform.ProjectConfig {
-
-	return nil
-}
-
-func (c *Synchronizer) getUpdatedProjects(leaderProjects []Project,
-	internalProjects []platform.Project) []platform.ProjectConfig {
-
-	return nil
-}
-
 func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 
 	// fetch projects from leader
-	leaderProjects, err := c.leaderClient.GetAll()
+	leaderProjects, err := c.leaderClient.GetAll(c.lastSuccessfulSyncTimestamp)
 	if err != nil {
 		return errors.Wrap(err, "Failed to get leader projects")
 	}

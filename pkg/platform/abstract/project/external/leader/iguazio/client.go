@@ -148,17 +148,27 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	return nil
 }
 
-func (c *Client) GetAll() ([]platform.Project, error) {
-	c.logger.DebugWith("Sending get all projects request to leader")
+func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error) {
+	c.logger.DebugWith("Sending get all projects request to leader",
+		"updatedAfterTimestamp", updatedAfterTimestamp)
 
 	if c.cachedCookie == nil {
 		return nil, nil
 	}
 
+	// if updatedAfterTimestamp arg was given, filter by it
+	updatedAfterTimestampQuery := ""
+	if updatedAfterTimestamp != "" {
+		updatedAfterTimestampQuery = fmt.Sprintf("?filter[updated_at]=[$gt]%s", updatedAfterTimestamp)
+	}
+
 	// send the request
 	headers := c.generateCommonRequestHeaders()
 	responseBody, _, err := common.SendHTTPRequest(http.MethodGet,
-		fmt.Sprintf("%s/%s", c.platformConfiguration.ProjectsLeader.APIAddress, "projects"),
+		fmt.Sprintf("%s/%s%s",
+			c.platformConfiguration.ProjectsLeader.APIAddress,
+			"projects",
+			updatedAfterTimestampQuery),
 		nil,
 		headers,
 		[]*http.Cookie{c.cachedCookie},
