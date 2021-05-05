@@ -139,7 +139,7 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	}
 	if leaderProjects == nil && err == nil {
 		c.logger.DebugWith("Skipping cause nil nil")
-		return nil
+		return errors.New("skipped cause nil err")
 	}
 
 	// fetch internal projects
