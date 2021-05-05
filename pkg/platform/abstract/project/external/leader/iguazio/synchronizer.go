@@ -2,6 +2,7 @@ package iguazio
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/platform"
@@ -118,12 +119,12 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 			leaderProjectConfig.Meta.Name)
 
 		matchingInternalProjectConfig, found := internalProjectsMap[namespaceAndNameKey]
-		if found && !matchingInternalProjectConfig.IsEqualContent(leaderProjectConfig) {
-
+		if !found {
+			projectsToCreate = append(projectsToCreate, leaderProjectConfig)
+		} else  if !matchingInternalProjectConfig.IsEqualContent(leaderProjectConfig) {
+			c.logger.DebugWith("is equal check", "meta", reflect.DeepEqual(leaderProjectConfig.Meta, matchingInternalProjectConfig.Meta), "spec", leaderProjectConfig.Spec==matchingInternalProjectConfig.Spec)
 			// if the project exists both internally and on the leader - update it
 			projectsToUpdate = append(projectsToUpdate, leaderProjectConfig)
-		} else {
-			projectsToCreate = append(projectsToCreate, leaderProjectConfig)
 		}
 	}
 
@@ -173,6 +174,9 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 					"namespace", createProjectConfig.ProjectConfig.Meta.Namespace,
 					"err", err)
 			}
+			c.logger.DebugWith("Successfully created project (during sync)",
+				"name", createProjectConfig.ProjectConfig.Meta.Name,
+				"namespace", createProjectConfig.ProjectConfig.Meta.Namespace)
 		}()
 	}
 
@@ -193,6 +197,9 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 					"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace,
 					"err", err)
 			}
+			c.logger.DebugWith("Successfully updated project (during sync)",
+				"name", updateProjectOptions.ProjectConfig.Meta.Name,
+				"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace)
 		}()
 	}
 
