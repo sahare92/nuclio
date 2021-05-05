@@ -11,6 +11,10 @@ type Project struct {
 }
 
 func CreateProjectFromProjectConfig(projectConfig *platform.ProjectConfig) Project {
+	// TODO: REMOVE THIS when zebo is sending project config with namespace
+	if projectConfig.Meta.Namespace == "" {
+		projectConfig.Meta.Namespace = "default-tenant"
+	}
 	return Project{
 		Data: ProjectData{
 			Type: ProjectType,
