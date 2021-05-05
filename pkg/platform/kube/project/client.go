@@ -250,7 +250,13 @@ func (c *Client) getProjectsFromCache(namespace, name string) []platform.Project
 
 func (c *Client) platformProjectToProject(platformProject *platform.ProjectConfig, project *nuclioio.NuclioProject) {
 	project.Name = platformProject.Meta.Name
+
+	// TODO: remove this once zebo sends namespace inside request
 	project.Namespace = platformProject.Meta.Namespace
+	if project.Namespace == "" {
+		project.Namespace = "default-tenant"
+	}
+
 	project.Labels = platformProject.Meta.Labels
 	project.Annotations = platformProject.Meta.Annotations
 	project.Spec = platformProject.Spec
