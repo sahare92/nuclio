@@ -214,6 +214,7 @@ func (c *Client) updateProjectInCache(projectInstance platform.Project) {
 }
 
 func (c *Client) deleteProjectFromCache(namespace, name string) {
+	c.Logger.DebugWith("deletion start", "cache", c.projectsCache)
 	newProjectsCache := []platform.Project{}
 
 	for _, projectInstance := range c.projectsCache {
@@ -225,6 +226,7 @@ func (c *Client) deleteProjectFromCache(namespace, name string) {
 	}
 
 	c.projectsCache = newProjectsCache
+	c.Logger.DebugWith("deletion end", "cache", c.projectsCache)
 }
 
 func (c *Client) getProjectsFromCache(namespace, name string) []platform.Project {
