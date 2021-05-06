@@ -18,6 +18,7 @@ package platform
 
 // use k8s structure definitions for now. In the future, duplicate them for cleanliness
 import (
+	"github.com/nuclio/nuclio/pkg/common"
 	"net/http"
 	"reflect"
 	"time"
@@ -163,13 +164,33 @@ type ProjectMeta struct {
 	ResourceVersion string `json:"resourceVersion,omitempty"`
 }
 
+func (pm ProjectMeta) IsEqual(other ProjectMeta) bool {
+	labels := common.GetStringStringMapOrEmpty(pm.Labels)
+	otherLabels := common.GetStringStringMapOrEmpty(other.Labels)
+	annotations := common.GetStringStringMapOrEmpty(pm.Annotations)
+	otherAnnotations := common.GetStringStringMapOrEmpty(other.Annotations)
+
+	return pm.Name == other.Name &&
+		pm.Namespace == pm.Namespace &&
+		reflect.DeepEqual(labels, otherLabels) &&
+		reflect.DeepEqual(annotations, otherAnnotations)
+}
+
 type ProjectSpec struct {
 	Description string `json:"description,omitempty"`
+}
+
+func (ps ProjectSpec) IsEqual(other ProjectSpec) bool {
+	return ps == other
 }
 
 type ProjectStatus struct {
 	AdminStatus       string `json:"adminStatus,omitempty"`
 	OperationalStatus string `json:"operationalStatus,omitempty"`
+}
+
+func (ps ProjectStatus) IsEqual(other ProjectStatus) bool {
+	return ps == other
 }
 
 type ProjectConfig struct {
@@ -182,16 +203,9 @@ func (pc *ProjectConfig) Scrub() {
 	pc.Meta.ResourceVersion = ""
 }
 
-func (pc *ProjectConfig) IsEqualContent(other *ProjectConfig) bool {
-	return reflect.DeepEqual(pc.Meta, other.Meta) && pc.Spec == other.Spec
+func (pc *ProjectConfig) IsEqual(other *ProjectConfig, ignoreStatus bool) bool {
+	return pc.Meta.IsEqual(other.Meta) && pc.Spec.IsEqual(other.Spec) && (ignoreStatus || pc.Status.IsEqual(other.Status))
 }
-
-type RequestOrigin string
-
-const (
-	RequestOriginEmpty  RequestOrigin = ""
-	RequestOriginLeader RequestOrigin = "leader"
-)
 
 type CreateProjectOptions struct {
 	ProjectConfig *ProjectConfig
