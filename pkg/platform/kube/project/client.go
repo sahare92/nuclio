@@ -119,14 +119,9 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	return nil
 }
 
-func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {
+func (c *Client) getProjectsFromKube(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {
 	var platformProjects []platform.Project
 	var projects []nuclioio.NuclioProject
-
-	// first, try getting projects from cache
-	if c.projectsCache != nil {
-		return c.getProjectsFromCache(getProjectsOptions.Meta.Namespace, getProjectsOptions.Meta.Name), nil
-	}
 
 	// if identifier specified, we need to get a single NuclioProject
 	if getProjectsOptions.Meta.Name != "" {
@@ -178,6 +173,16 @@ func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platfor
 	return platformProjects, nil
 }
 
+func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {
+
+	// first, try getting projects from cache
+	if c.projectsCache != nil {
+		return c.getProjectsFromCache(getProjectsOptions), nil
+	}
+
+	return c.getProjectsFromKube(getProjectsOptions)
+}
+
 func (c *Client) syncProjectsCache() error {
 	c.projectsCache = []platform.Project{}
 
@@ -189,7 +194,7 @@ func (c *Client) syncProjectsCache() error {
 
 	c.Logger.DebugWith("found namespaces", "ns", namespaces)
 	for _, namespace := range namespaces {
-		projectsInNamespace, err := c.Get(&platform.GetProjectsOptions{Meta: platform.ProjectMeta{Namespace: namespace}})
+		projectsInNamespace, err := c.getProjectsFromKube(&platform.GetProjectsOptions{Meta: platform.ProjectMeta{Namespace: namespace}})
 		if err != nil {
 			return errors.Wrapf(err, "Failed to get projects in namespace: %s", namespace)
 		}
@@ -227,17 +232,17 @@ func (c *Client) deleteProjectFromCache(namespace, name string) {
 	c.Logger.DebugWith("deletion end", "cache", c.projectsCache)
 }
 
-func (c *Client) getProjectsFromCache(namespace, name string) []platform.Project {
+func (c *Client) getProjectsFromCache(getProjectOptions *platform.GetProjectsOptions) []platform.Project {
 	matchingProjects := []platform.Project{}
 
 	for _, projectInstance := range c.projectsCache {
 		projectConfig := projectInstance.GetConfig()
-		if projectConfig.Meta.Namespace != namespace {
+		if projectConfig.Meta.Namespace != getProjectOptions.Meta.Namespace{
 			continue
 		}
 
-		if name != "" {
-			if projectConfig.Meta.Name == name {
+		if getProjectOptions.Meta.Name != "" {
+			if projectConfig.Meta.Name == getProjectOptions.Meta.Name {
 				return []platform.Project{projectInstance}
 			}
 		}
