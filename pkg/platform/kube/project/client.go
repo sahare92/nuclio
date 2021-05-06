@@ -32,14 +32,10 @@ func NewClient(parentLogger logger.Logger, platformInstance platform.Platform, c
 }
 
 func (c *Client) Initialize() error {
-	if err := c.platform.EnsureDefaultProjectExistence(); err != nil {
-		return errors.Wrap(err, "Failed to ensure default project existence")
-	}
-
+	c.Logger.DebugWith("Initializing projects client (kube)")
 	if err := c.syncProjectsCache(); err != nil {
 		return errors.Wrap(err, "Failed to sync projects cache")
 	}
-
 	return nil
 }
 

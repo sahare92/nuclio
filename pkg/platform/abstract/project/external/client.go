@@ -47,7 +47,7 @@ func NewClient(parentLogger logger.Logger,
 func (c *Client) Initialize() error {
 	c.synchronizer.Start()
 
-	return nil
+	return c.internalClient.Initialize()
 }
 
 func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {

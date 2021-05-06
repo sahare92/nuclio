@@ -141,7 +141,14 @@ func NewPlatform(parentLogger logger.Logger,
 }
 
 func (p *Platform) Initialize() error {
-	p.Logger.DebugWith("initiazlied from local platform")
+
+	// ensure default project existence only when projects aren't managed by external leader
+	if p.Config.ProjectsLeader == nil {
+		if err := p.EnsureDefaultProjectExistence(); err != nil {
+			return errors.Wrap(err, "Failed to ensure default project existence")
+		}
+	}
+
 	return p.projectsClient.Initialize()
 }
 
