@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/common"
@@ -39,9 +40,7 @@ func NewClient(parentLogger logger.Logger, platformConfiguration *platformconfig
 func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) error {
 	c.logger.DebugWith("Sending create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
-		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace,
-		"sessionValue", createProjectOptions.SessionCookie.Value,
-		"sessionName", createProjectOptions.SessionCookie.Name)
+		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace)
 
 	// generate request body
 	body, err := c.generateProjectRequestBody(createProjectOptions.ProjectConfig)
@@ -149,10 +148,10 @@ func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error
 		updatedAfterTimestampQuery = fmt.Sprintf("?filter[updated_at]=[$gt]%s", updatedAfterTimestamp)
 	}
 
-	// get iguazio session - must exist in order to perform this GET operation against iguazio dashboard API
-	iguazioSession := c.platformConfiguration.IguazioSession
-	if iguazioSession == "" {
-		return nil, errors.New("Iguazio access key must be specified to get projects from its api")
+	// get the encoded iguazio session - used to perform this GET operation against iguazio dashboard API
+	encodedIguazioSession, err := c.getEncodedIguazioSession()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to get encoded iguazio session")
 	}
 
 	// send the request
@@ -164,7 +163,7 @@ func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error
 			updatedAfterTimestampQuery),
 		nil,
 		headers,
-		[]*http.Cookie{{Name: "session", Value: iguazioSession}},
+		[]*http.Cookie{{Name: "session", Value: encodedIguazioSession}},
 		http.StatusOK,
 		true,
 		DefaultRequestTimeout)
@@ -178,6 +177,17 @@ func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error
 	}
 
 	return projectsList.ToSingleProjectList(), nil
+}
+
+func (c *Client) getEncodedIguazioSession() (string, error) {
+	iguazioSession := c.platformConfiguration.IguazioSession
+	if iguazioSession == "" {
+		return "", errors.New("Iguazio session is empty")
+	}
+
+	// parse it as expected
+	parsedIguazioSession, _ := url.ParseQuery(`j:{{"sid": "217454e9-ba2e-411b-b893-2201ae213af4"}}`)
+	return parsedIguazioSession.Encode(), nil
 }
 
 func (c *Client) generateCommonRequestHeaders() map[string]string {
