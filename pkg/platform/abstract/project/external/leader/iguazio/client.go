@@ -39,7 +39,9 @@ func NewClient(parentLogger logger.Logger, platformConfiguration *platformconfig
 func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) error {
 	c.logger.DebugWith("Sending create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
-		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace)
+		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace,
+		"sessionValue", createProjectOptions.SessionCookie.Value,
+		"sessionName", createProjectOptions.SessionCookie.Name)
 
 	// generate request body
 	body, err := c.generateProjectRequestBody(createProjectOptions.ProjectConfig)
