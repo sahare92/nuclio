@@ -121,7 +121,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 		matchingInternalProjectConfig, found := internalProjectsMap[namespaceAndNameKey]
 		if !found {
 			projectsToCreate = append(projectsToCreate, leaderProjectConfig)
-		} else  if !matchingInternalProjectConfig.IsEqual(leaderProjectConfig, false) {
+		} else  if !matchingInternalProjectConfig.IsEqual(leaderProjectConfig, true) {
 			c.logger.DebugWith("is equal check", "meta", reflect.DeepEqual(leaderProjectConfig.Meta, matchingInternalProjectConfig.Meta), "spec", leaderProjectConfig.Spec==matchingInternalProjectConfig.Spec)
 			// if the project exists both internally and on the leader - update it
 			projectsToUpdate = append(projectsToUpdate, leaderProjectConfig)
