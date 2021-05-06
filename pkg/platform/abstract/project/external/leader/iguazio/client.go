@@ -40,7 +40,9 @@ func NewClient(parentLogger logger.Logger, platformConfiguration *platformconfig
 func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) error {
 	c.logger.DebugWith("Sending create project request to leader",
 		"name", createProjectOptions.ProjectConfig.Meta.Name,
-		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace)
+		"namespace", createProjectOptions.ProjectConfig.Meta.Namespace,
+		"sessionName", createProjectOptions.SessionCookie.Name,
+		"sessionValue", createProjectOptions.SessionCookie.Value)
 
 	// generate request body
 	body, err := c.generateProjectRequestBody(createProjectOptions.ProjectConfig)
@@ -153,6 +155,7 @@ func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get encoded iguazio session")
 	}
+	c.logger.DebugWith("get all session", "encodedIguazioSession", encodedIguazioSession)
 
 	// send the request
 	headers := c.generateCommonRequestHeaders()
@@ -186,7 +189,7 @@ func (c *Client) getEncodedIguazioSession() (string, error) {
 	}
 
 	// parse it as expected
-	parsedIguazioSession, _ := url.ParseQuery(`j:{{"sid": "217454e9-ba2e-411b-b893-2201ae213af4"}}`)
+	parsedIguazioSession, _ := url.ParseQuery(iguazioSession)
 	return parsedIguazioSession.Encode(), nil
 }
 
