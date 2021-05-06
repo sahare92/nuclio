@@ -5,7 +5,6 @@ import (
 
 	"github.com/nuclio/nuclio/pkg/platform"
 	abstractproject "github.com/nuclio/nuclio/pkg/platform/abstract/project"
-	"github.com/nuclio/nuclio/pkg/platform/kube"
 	nuclioio "github.com/nuclio/nuclio/pkg/platform/kube/apis/nuclio.io/v1beta1"
 	"github.com/nuclio/nuclio/pkg/platform/kube/client"
 
@@ -18,12 +17,12 @@ import (
 
 type Client struct {
 	Logger        logger.Logger
-	platform      *kube.Platform
+	platform      platform.Platform
 	consumer      *client.Consumer
 	projectsCache []platform.Project
 }
 
-func NewClient(parentLogger logger.Logger, platformInstance *kube.Platform, consumer *client.Consumer) (abstractproject.Client, error) {
+func NewClient(parentLogger logger.Logger, platformInstance platform.Platform, consumer *client.Consumer) (abstractproject.Client, error) {
 	newClient := Client{
 		Logger:   parentLogger.GetChild("projects-client"),
 		consumer: consumer,
@@ -185,7 +184,7 @@ func (c *Client) syncProjectsCache() error {
 	// get all managed namespaces
 	namespaces, err := c.platform.GetNamespaces()
 	if err != nil {
-		namespaces = []string{c.platform.ResolveDefaultNamespace(c.platform.DefaultNamespace)}
+		namespaces = []string{c.platform.ResolveDefaultNamespace(c.platform.ResolveDefaultNamespace(""))}
 	}
 
 	for _, namespace := range namespaces {

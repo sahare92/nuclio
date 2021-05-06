@@ -897,6 +897,10 @@ func (p *Platform) ResolveDefaultNamespace(defaultNamespace string) string {
 	}
 
 	if defaultNamespace == "" {
+		if p.DefaultNamespace != "" {
+			return p.DefaultNamespace
+		}
+
 		return "default"
 	}
 
