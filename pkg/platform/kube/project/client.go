@@ -184,9 +184,10 @@ func (c *Client) syncProjectsCache() error {
 	// get all managed namespaces
 	namespaces, err := c.platform.GetNamespaces()
 	if err != nil {
-		namespaces = []string{c.platform.ResolveDefaultNamespace(c.platform.ResolveDefaultNamespace(""))}
+		namespaces = []string{c.platform.ResolveDefaultNamespace("")}
 	}
 
+	c.Logger.DebugWith("found namespaces", "ns", namespaces)
 	for _, namespace := range namespaces {
 		projectsInNamespace, err := c.Get(&platform.GetProjectsOptions{Meta: platform.ProjectMeta{Namespace: namespace}})
 		if err != nil {
