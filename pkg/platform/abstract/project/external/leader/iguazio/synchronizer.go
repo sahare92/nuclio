@@ -138,10 +138,6 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to get leader projects")
 	}
-	if leaderProjects == nil && err == nil {
-		c.logger.DebugWith("Skipping cause nil nil")
-		return errors.New("skipped cause nil err")
-	}
 
 	// fetch internal projects
 	// TODO: fetch projects from every managed namespace - could be done by implementing GetAll()

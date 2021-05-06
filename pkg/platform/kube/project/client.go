@@ -119,6 +119,17 @@ func (c *Client) Delete(deleteProjectOptions *platform.DeleteProjectOptions) err
 	return nil
 }
 
+func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {
+
+	// first, try getting projects from cache
+	if c.projectsCache != nil {
+		return c.getProjectsFromCache(getProjectsOptions), nil
+	}
+
+	return c.getProjectsFromKube(getProjectsOptions)
+}
+
+
 func (c *Client) getProjectsFromKube(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {
 	var platformProjects []platform.Project
 	var projects []nuclioio.NuclioProject
@@ -173,16 +184,6 @@ func (c *Client) getProjectsFromKube(getProjectsOptions *platform.GetProjectsOpt
 	return platformProjects, nil
 }
 
-func (c *Client) Get(getProjectsOptions *platform.GetProjectsOptions) ([]platform.Project, error) {
-
-	// first, try getting projects from cache
-	if c.projectsCache != nil {
-		return c.getProjectsFromCache(getProjectsOptions), nil
-	}
-
-	return c.getProjectsFromKube(getProjectsOptions)
-}
-
 func (c *Client) syncProjectsCache() error {
 	c.projectsCache = []platform.Project{}
 
@@ -192,7 +193,6 @@ func (c *Client) syncProjectsCache() error {
 		namespaces = []string{c.platform.ResolveDefaultNamespace("")}
 	}
 
-	c.Logger.DebugWith("found namespaces", "ns", namespaces)
 	for _, namespace := range namespaces {
 		projectsInNamespace, err := c.getProjectsFromKube(&platform.GetProjectsOptions{Meta: platform.ProjectMeta{Namespace: namespace}})
 		if err != nil {
