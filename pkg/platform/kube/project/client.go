@@ -44,6 +44,10 @@ func (c *Client) Create(createProjectOptions *platform.CreateProjectOptions) (pl
 	newProject := nuclioio.NuclioProject{}
 	c.platformProjectToProject(createProjectOptions.ProjectConfig, &newProject)
 
+	if newProject.Namespace == "" {
+		newProject.Namespace = "default-tenant"
+	}
+
 	nuclioProject, err := c.consumer.NuclioClientSet.NuclioV1beta1().
 		NuclioProjects(newProject.Namespace).
 		Create(&newProject)
@@ -75,6 +79,10 @@ func (c *Client) Update(updateProjectOptions *platform.UpdateProjectOptions) (pl
 	projectInstance.Spec = updatedProject.Spec
 	projectInstance.Annotations = updatedProject.Annotations
 	projectInstance.Labels = updatedProject.Labels
+
+	if projectInstance.Namespace == "" {
+		projectInstance.Namespace = "default-tenant"
+	}
 
 	nuclioProject, err := c.consumer.NuclioClientSet.NuclioV1beta1().
 		NuclioProjects(projectInstance.Namespace).
