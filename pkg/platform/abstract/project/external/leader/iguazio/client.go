@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/common"
@@ -188,9 +189,13 @@ func (c *Client) getEncodedIguazioSession() (string, error) {
 		return "", errors.New("Iguazio session is empty")
 	}
 
-	// parse it as expected
-	parsedIguazioSession, _ := url.ParseQuery(iguazioSession)
-	return parsedIguazioSession.Encode(), nil
+	// parse as the session cookie is expected to be (uses url query encoding)
+	parsedSession := url.QueryEscape(iguazioSession)
+
+	// net/url QueryEscape() still doesn't parse "+" as "%20", so do it manually
+	parsedSession = strings.ReplaceAll(parsedSession, "+", "%20")
+
+	return parsedSession, nil
 }
 
 func (c *Client) generateCommonRequestHeaders() map[string]string {
