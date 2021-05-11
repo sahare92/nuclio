@@ -14,11 +14,11 @@ import (
 )
 
 type Synchronizer struct {
-	logger                      logger.Logger
-	platformConfiguration       *platformconfig.Config
-	leaderClient                leader.Client
-	internalProjectsClient      project.Client
-	lastSuccessfulSyncTimestamp string
+	logger                       logger.Logger
+	platformConfiguration        *platformconfig.Config
+	leaderClient                 leader.Client
+	internalProjectsClient       project.Client
+	mostRecentUpdatedProjectTime time.Time
 }
 
 func NewSynchronizer(parentLogger logger.Logger,
@@ -80,12 +80,13 @@ func (c *Synchronizer) updateLastSuccessfulSyncTimestamp() {
 	}
 
 	t := time.Now().In(loc)
-	c.lastSuccessfulSyncTimestamp = t.Format(time.RFC3339)
+	c.mostRecentUpdatedProjectTime = t.Format(time.RFC3339)
 }
 
 func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
 	projectsToCreate []*platform.ProjectConfig,
-	projectsToUpdate []*platform.ProjectConfig) {
+	projectsToUpdate []*platform.ProjectConfig,
+	mostRecentUpdatedProjectTime time.Time) {
 
 	// a helper function - generates unique key to be used by the projects map later
 	generateUniqueProjectKey := func(configInstance *platform.ProjectConfig) string {
@@ -114,7 +115,12 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 			leaderProjectConfig.Status.AdminStatus != "online" {
 			continue
 		}
-		c.logger.DebugWith("Current updated at", "name", leaderProjectConfig.Meta.Name, "updatedAt", leaderProjectConfig.Status.UpdatedAt)
+
+		// check if it's the most recent updated project
+		if mostRecentUpdatedProjectTime.Before(leaderProjectConfig.Status.UpdatedAt) {
+			mostRecentUpdatedProjectTime = leaderProjectConfig.Status.UpdatedAt
+		}
+
 		// check if the project exists internally
 		namespaceAndNameKey := generateUniqueProjectKey(leaderProjectConfig)
 		matchingInternalProjectConfig, found := internalProjectsMap[namespaceAndNameKey]
@@ -133,7 +139,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 
 	// fetch projects from leader (created/updated since last sync)
-	leaderProjects, err := c.leaderClient.GetAll(c.lastSuccessfulSyncTimestamp)
+	leaderProjects, err := c.leaderClient.GetAll(&c.mostRecentUpdatedProjectTime)
 	if err != nil {
 		return errors.Wrap(err, "Failed to get leader projects")
 	}
@@ -145,7 +151,7 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 	}
 
 	// filter modified projects
-	projectsToCreate, projectsToUpdate := c.getModifiedProjects(leaderProjects, internalProjects)
+	projectsToCreate, projectsToUpdate, mostRecentUpdatedProjectTime := c.getModifiedProjects(leaderProjects, internalProjects)
 	if len(projectsToCreate) == 0 && len(projectsToUpdate) == 0 {
 
 		// nothing to create/update - return
@@ -203,6 +209,9 @@ func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 				"namespace", updateProjectOptions.ProjectConfig.Meta.Namespace)
 		}()
 	}
+
+	// update most recent updated project time
+	c.mostRecentUpdatedProjectTime = mostRecentUpdatedProjectTime
 
 	return nil
 }
