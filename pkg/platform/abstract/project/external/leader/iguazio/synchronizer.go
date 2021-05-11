@@ -67,7 +67,7 @@ func (c *Synchronizer) synchronizationLoop(interval time.Duration) {
 	}
 }
 
-func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
+	func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
 	projectsToCreate []*platform.ProjectConfig,
 	projectsToUpdate []*platform.ProjectConfig,
 	mostRecentUpdatedProjectTime time.Time) {
