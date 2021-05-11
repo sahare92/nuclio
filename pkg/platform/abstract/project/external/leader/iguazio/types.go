@@ -19,7 +19,6 @@ func CreateProjectFromProjectConfig(projectConfig *platform.ProjectConfig) Proje
 			Type: ProjectType,
 			Attributes: ProjectAttributes{
 				Name:        projectConfig.Meta.Name,
-				Namespace:   projectConfig.Meta.Namespace,
 				Labels:      labelMapToList(projectConfig.Meta.Labels),
 				Annotations: labelMapToList(projectConfig.Meta.Annotations),
 				Description: projectConfig.Spec.Description,
