@@ -64,23 +64,7 @@ func (c *Synchronizer) synchronizationLoop(interval time.Duration) {
 			c.logger.WarnWith("Failed to synchronize projects according to leader", "err", err)
 			continue
 		}
-
-		// update last successful sync timestamp
-		c.updateLastSuccessfulSyncTimestamp()
 	}
-}
-
-func (c *Synchronizer) updateLastSuccessfulSyncTimestamp() {
-	loc, err := time.LoadLocation("GMT")
-	if err != nil {
-		c.logger.WarnWith("Failed to load GMT location (Should not happen on unix based systems). "+
-			"Skipping last successful sync timestamp update",
-			"err", err)
-		return
-	}
-
-	t := time.Now().In(loc)
-	c.mostRecentUpdatedProjectTime = t.Format(time.RFC3339)
 }
 
 func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
