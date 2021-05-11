@@ -18,7 +18,7 @@ type Synchronizer struct {
 	platformConfiguration        *platformconfig.Config
 	leaderClient                 leader.Client
 	internalProjectsClient       project.Client
-	mostRecentUpdatedProjectTime time.Time
+	mostRecentUpdatedProjectTime *time.Time
 }
 
 func NewSynchronizer(parentLogger logger.Logger,
@@ -70,7 +70,7 @@ func (c *Synchronizer) synchronizationLoop(interval time.Duration) {
 	func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, internalProjects []platform.Project) (
 	projectsToCreate []*platform.ProjectConfig,
 	projectsToUpdate []*platform.ProjectConfig,
-	mostRecentUpdatedProjectTime time.Time) {
+	mostRecentUpdatedProjectTime *time.Time) {
 
 	// a helper function - generates unique key to be used by the projects map later
 	generateUniqueProjectKey := func(configInstance *platform.ProjectConfig) string {
@@ -102,7 +102,7 @@ func (c *Synchronizer) synchronizationLoop(interval time.Duration) {
 
 		// check if it's the most recent updated project
 		if mostRecentUpdatedProjectTime.Before(leaderProjectConfig.Status.UpdatedAt) {
-			mostRecentUpdatedProjectTime = leaderProjectConfig.Status.UpdatedAt
+			mostRecentUpdatedProjectTime = &leaderProjectConfig.Status.UpdatedAt
 		}
 
 		// check if the project exists internally
@@ -123,7 +123,7 @@ func (c *Synchronizer) synchronizationLoop(interval time.Duration) {
 func (c *Synchronizer) synchronizeProjectsAccordingToLeader() error {
 
 	// fetch projects from leader (created/updated since last sync)
-	leaderProjects, err := c.leaderClient.GetAll(&c.mostRecentUpdatedProjectTime)
+	leaderProjects, err := c.leaderClient.GetAll(c.mostRecentUpdatedProjectTime)
 	if err != nil {
 		return errors.Wrap(err, "Failed to get leader projects")
 	}
