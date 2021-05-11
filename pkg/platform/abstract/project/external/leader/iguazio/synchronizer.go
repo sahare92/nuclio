@@ -114,7 +114,7 @@ func (c *Synchronizer) getModifiedProjects(leaderProjects []platform.Project, in
 			leaderProjectConfig.Status.AdminStatus != "online" {
 			continue
 		}
-
+		c.logger.DebugWith("Current updated at", "name", leaderProjectConfig.Meta.Name, "updatedAt", leaderProjectConfig.Status.UpdatedAt)
 		// check if the project exists internally
 		namespaceAndNameKey := generateUniqueProjectKey(leaderProjectConfig)
 		matchingInternalProjectConfig, found := internalProjectsMap[namespaceAndNameKey]

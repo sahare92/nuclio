@@ -39,6 +39,7 @@ func (pl *Project) GetConfig() *platform.ProjectConfig {
 		Status: platform.ProjectStatus{
 			AdminStatus:       pl.Data.Attributes.AdminStatus,
 			OperationalStatus: pl.Data.Attributes.OperationalStatus,
+			UpdatedAt:         pl.Data.Attributes.UpdatedAt,
 		},
 	}
 }
@@ -76,6 +77,7 @@ type ProjectAttributes struct {
 	Description       string        `json:"description,omitempty"`
 	AdminStatus       string        `json:"admin_status,omitempty"`
 	OperationalStatus string        `json:"operational_status,omitempty"`
+	UpdatedAt         string        `json:"updated_at,omitempty"`
 	NuclioProject     NuclioProject `json:"nuclio_project,omitempty"`
 }
 
