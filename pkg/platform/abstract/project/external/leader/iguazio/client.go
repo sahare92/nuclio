@@ -190,8 +190,8 @@ func (c *Client) getEncodedIguazioSession() (string, error) {
 	// parse as the session cookie is expected to be (uses url query encoding)
 	parsedSession := url.QueryEscape(iguazioSession)
 
-	// net/url QueryEscape() still doesn't parse "" as "%20", so do it manually
-	parsedSession = strings.ReplaceAll(parsedSession, "", "%20")
+	// net/url QueryEscape() still doesn't parse "+" as "%20", so do it manually
+	parsedSession = strings.ReplaceAll(parsedSession, "+", "%20")
 
 	return parsedSession, nil
 }
