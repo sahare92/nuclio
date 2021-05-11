@@ -154,6 +154,7 @@ func (c *Client) GetAll(updatedAfterTimestamp string) ([]platform.Project, error
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to get encoded iguazio session")
 	}
+	c.logger.DebugWith("encoded iguazio session", "encodedIguazioSession", encodedIguazioSession)
 
 	// send the request
 	headers := c.generateCommonRequestHeaders()
