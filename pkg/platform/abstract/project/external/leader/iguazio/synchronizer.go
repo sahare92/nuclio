@@ -101,7 +101,7 @@ func (c *Synchronizer) synchronizationLoop(interval time.Duration) {
 		}
 
 		// check if it's the most recent updated project
-		if mostRecentUpdatedProjectTime.Before(leaderProjectConfig.Status.UpdatedAt) {
+		if mostRecentUpdatedProjectTime == nil || mostRecentUpdatedProjectTime.Before(leaderProjectConfig.Status.UpdatedAt) {
 			mostRecentUpdatedProjectTime = &leaderProjectConfig.Status.UpdatedAt
 		}
 
