@@ -145,7 +145,7 @@ func (c *Client) GetAll(updatedAfterTime *time.Time) ([]platform.Project, error)
 	// if updatedAfterTime arg was given, filter by it
 	updatedAfterTimestampQuery := ""
 	if updatedAfterTime != nil {
-		updatedAfterTimestamp := updatedAfterTime.Format(time.RFC3339)
+		updatedAfterTimestamp := updatedAfterTime.Format(time.RFC3339Nano)
 		updatedAfterTimestampQuery = fmt.Sprintf("?filter[updated_at]=[$gt]%s", updatedAfterTimestamp)
 	}
 
